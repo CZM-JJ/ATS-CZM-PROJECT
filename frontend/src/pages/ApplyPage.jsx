@@ -457,7 +457,7 @@ function ApplyPage() {
           <div className="apply-hero-copy">
             <p className="apply-kicker">CZARK MAK CORPORATION</p>
             <h1 className="apply-title apply-title-rotate">
-              <span className="apply-title-prefix">Apply for</span>
+              <span className="apply-title-prefix">Build your career with us</span>
               <span className="apply-rotator" aria-label="Rotating career keywords">
                 <span className="apply-rotator-track">
                   <span>Careers</span>
@@ -476,7 +476,7 @@ function ApplyPage() {
           </div>
           <div className="apply-hero-logo-only" aria-label="Czark Mak logo">
             <img
-              src="/LOGO_CZM_MAIN%20LOGO_02.jpg"
+              src="/LOGO_CZM%20MAIN%2001.png"
               alt="Czark Mak Corporation"
               className="apply-hero-logo-img"
             />

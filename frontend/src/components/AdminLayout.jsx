@@ -162,9 +162,9 @@ export default function AdminLayout({ children, pageTitle }) {
       <header className="admin-topbar">
         <div className="admin-topbar-inner">
           <div className="admin-brand">
-            <img src="/logoczark.png" alt="Czark Mak" className="admin-brand-logo" />
+            <img src="/LOGO_CZM MAIN 02.png" alt="Czark Mak" className="admin-brand-logo" />
             <div>
-              <p className="admin-kicker">CZARK MAK CORPORATION</p>
+              <p className="admin-kicker">CZARK MAK GROUP OF COMPANIES<br />TALENT HUB</p>
               <span className="admin-brand-name">{pageTitle}</span>
             </div>
           </div>

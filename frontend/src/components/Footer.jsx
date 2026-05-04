@@ -12,7 +12,7 @@ export default function Footer() {
           {/* Brand column */}
           <div className="sf-brand">
             <div className="sf-logo-wrap">
-              <img src="/logoczark.png" alt="Czark Mak Corporation" className="sf-logo" />
+              <img src="/LOGO_CZM%20MAIN%2002.png" alt="Czark Mak Corporation" className="sf-logo" />
             </div>
             <div>
               <p className="sf-company">CZARK MAK CORPORATION</p>
@@ -57,7 +57,7 @@ export default function Footer() {
             <div className="terms-modal-head">
               <div className="terms-modal-title-wrap">
                 <div className="terms-modal-logo">
-                  <img src="/logoczark.png" alt="" />
+                  <img src="/LOGO_CZM%20MAIN%2002.png" alt="" />
                 </div>
                 <div>
                   <p className="terms-modal-kicker">Czark Mak Corporation</p>
