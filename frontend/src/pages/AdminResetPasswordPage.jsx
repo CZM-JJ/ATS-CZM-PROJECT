@@ -1,18 +1,6 @@
 import { useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { apiBase } from '../utils/apiBase'
-
-const extractError = async (response) => {
-  try {
-    const payload = await response.json()
-    if (payload?.message) return payload.message
-    if (payload?.errors) {
-      const firstKey = Object.keys(payload.errors)[0]
-      if (firstKey) return payload.errors[firstKey][0]
-    }
-  } catch { return null }
-  return 'Unable to complete the request. Please try again.'
-}
+import { authAPI } from '../services/api'
 
 function getStrength(pw) {
   let score = 0
@@ -63,17 +51,12 @@ function AdminResetPasswordPage() {
     if (getStrength(password) < 2) { setError('Password is too weak. Add uppercase letters, numbers or symbols.'); return }
     setLoading(true)
     try {
-      const response = await fetch(`${apiBase}/api/reset-password`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, email, password, password_confirmation: confirmPassword }),
-      })
-      if (!response.ok) { setError(await extractError(response)); return }
+      await authAPI.resetPassword({ token, email, password, password_confirmation: confirmPassword })
       setDone(true)
       setTimeout(() => navigate('/admin/login'), 3000)
-    } catch { setError('Unable to reset password. Please try again.') }
-    finally { setLoading(false) }
+    } catch {
+      setError('Unable to reset password. Please try again.')
+    } finally { setLoading(false) }
   }
 
   return (

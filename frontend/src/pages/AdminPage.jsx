@@ -1,40 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useSearchParams } from 'react-router-dom'
 import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-import { apiBase } from '../utils/apiBase'
-const statusOptions = [
-  'new',
-  'reviewed',
-  'shortlisted',
-  'interview_scheduled',
-  'offer_extended',
-  'hired',
-  'rejected',
-  'withdrawn',
-]
-const pipelineStatusOptions = statusOptions.slice(0, 6)
-const terminalStatusOptions = statusOptions.slice(6)
-
-const extractError = async (response) => {
-  try {
-    const payload = await response.json()
-    if (payload?.message) {
-      return payload.message
-    }
-    if (payload?.errors) {
-      const firstKey = Object.keys(payload.errors)[0]
-      if (firstKey) {
-        return payload.errors[firstKey][0]
-      }
-    }
-  } catch (err) {
-    return null
-  }
-
-  return 'Unable to complete the request. Please try again.'
-}
+import { applicantAPI, noteAPI } from '../services/api'
+import { STATUS_OPTIONS, PIPELINE_STATUS_OPTIONS, TERMINAL_STATUS_OPTIONS } from '../utils/constants'
+import { formatStatus, formatText, toName } from '../utils/helpers'
 
 function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -100,18 +71,7 @@ function AdminPage() {
       const cleanFilters = Object.fromEntries(
         Object.entries(filters).filter(([, v]) => v !== undefined && v !== null && v !== '')
       )
-      const params = new URLSearchParams(cleanFilters)
-      const queryString = params.toString()
-      const response = await fetch(`${apiBase}/api/applicants${queryString ? `?${queryString}` : ''}`, {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${activeToken}` },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to load applicants')
-      }
-
-      const payload = await response.json()
+      const payload = await applicantAPI.getAll(activeToken, cleanFilters)
       const data = payload.data || []
       let nextApplicants = data
 
@@ -119,17 +79,13 @@ function AdminPage() {
       // ensure their details can be shown even if they're not in the current page slice.
       if (preferredId !== null && !data.some((a) => a.id === preferredId)) {
         try {
-          const applicantRes = await fetch(`${apiBase}/api/applicants/${preferredId}`, {
-            credentials: 'include',
-            headers: { Authorization: `Bearer ${activeToken}` },
-          })
-          if (applicantRes.ok) {
-            const applicantPayload = await applicantRes.json()
-            if (applicantPayload?.id) {
-              nextApplicants = [applicantPayload, ...data]
-            }
+          const applicantPayload = await applicantAPI.getById(activeToken, preferredId)
+          if (applicantPayload?.id) {
+            nextApplicants = [applicantPayload, ...data]
           }
-        } catch (_) {}
+        } catch {
+          // silently fail
+        }
       }
 
       setApplicants(nextApplicants)
@@ -141,6 +97,8 @@ function AdminPage() {
         if (prev && nextApplicants.some((a) => a.id === prev)) return prev
         return nextApplicants[0]?.id || null
       })
+    } catch {
+      setAdminError('Failed to load applicants.')
     } finally {
       setLoadingApplicants(false)
     }
@@ -155,18 +113,9 @@ function AdminPage() {
     setNotesLoading(true)
     setNotesError(null)
     try {
-      const response = await fetch(`${apiBase}/api/applicants/${applicantId}/notes`, {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${activeToken}` },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to load notes')
-      }
-
-      const payload = await response.json()
-      setNotes(payload || [])
-    } catch (err) {
+      const payload = await noteAPI.getByApplicant(activeToken, applicantId)
+      setNotes(Array.isArray(payload) ? payload : [])
+    } catch {
       setNotesError('Unable to load notes.')
     } finally {
       setNotesLoading(false)
@@ -174,7 +123,10 @@ function AdminPage() {
   }
 
   // Initialize filters from URL params
-  const getParam = (key, defaultValue = '') => searchParams.get(key) ?? defaultValue
+  const getParam = useCallback(
+    (key, defaultValue = '') => searchParams.get(key) ?? defaultValue,
+    [searchParams]
+  )
 
   useEffect(() => {
     if (!token) {
@@ -193,7 +145,7 @@ function AdminPage() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [token, searchParams, viewMode])
+  }, [token, searchParams, viewMode, getParam])
 
   // Sync URL params when filters change
   useEffect(() => {
@@ -210,7 +162,7 @@ function AdminPage() {
     if (viewMode === 'archived') params.set('archived', 'only')
 
     setSearchParams(params, { replace: true })
-  }, [searchParams, viewMode, setSearchParams])
+  }, [searchParams, viewMode, setSearchParams, getParam])
 
   useEffect(() => {
     if (!token || !selectedId || viewMode === 'archived') {
@@ -227,6 +179,7 @@ function AdminPage() {
       URL.revokeObjectURL(resumeBlobUrl)
       setResumeBlobUrl(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, selectedId, viewMode])
 
   useEffect(() => {
@@ -249,12 +202,7 @@ function AdminPage() {
     setResumeLoading(true)
     setResumeError(null)
     try {
-      const response = await fetch(`${apiBase}/api/applicants/${selectedId}/cv`, {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!response.ok) throw new Error('Could not load resume.')
-      const blob = await response.blob()
+      const blob = await applicantAPI.getCv(token, selectedId)
       const url  = URL.createObjectURL(blob)
       setResumeBlobUrl(url)
       setShowResume(true)
@@ -275,34 +223,15 @@ function AdminPage() {
     setNotesError(null)
 
     try {
-      const response = await fetch(`${apiBase}/api/applicants/${selectedId}/notes`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ note: noteDraft.trim() }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to save note')
-      }
-
-      const payload = await response.json()
+      const payload = await noteAPI.create(token, selectedId, noteDraft.trim())
       setNotes((previous) => [payload, ...previous])
       setNoteDraft('')
-    } catch (err) {
+    } catch {
       setNotesError('Unable to save note.')
     } finally {
       setNoteSaving(false)
     }
   }
-
-  const formatStatus = (value) => {
-    return value.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-  }
-  const toName = (str) => str ? str.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : ''
 
   const avatarPalettes = [
     { background: 'linear-gradient(135deg,#0f3d2e,#1a6644)', color: '#c8a441' },
@@ -332,12 +261,7 @@ function AdminPage() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
-      const res = await fetch(`${apiBase}/api/applicants/${deleteTarget.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error()
+      await applicantAPI.delete(token, deleteTarget.id)
       setApplicants((prev) => {
         const deletedIndex = prev.findIndex((a) => a.id === deleteTarget.id)
         const remaining = prev.filter((a) => a.id !== deleteTarget.id)
@@ -359,6 +283,7 @@ function AdminPage() {
       })
       setTotal((prev) => prev - 1)
       setDeleteTarget(null)
+      setAdminMessage('Applicant archived.')
     } catch {
       setAdminError('Failed to archive applicant.')
     } finally {
@@ -372,18 +297,12 @@ function AdminPage() {
     setAdminMessage(null)
     setAdminError(null)
     try {
-      const response = await fetch(`${apiBase}/api/applicants/${restoreTarget.id}/restore`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!response.ok) throw new Error()
-
+      await applicantAPI.restore(token, restoreTarget.id)
       setApplicants((previous) => previous.filter((item) => item.id !== restoreTarget.id))
       setSelectedId((current) => (current === restoreTarget.id ? null : current))
       setRestoreTarget(null)
       setAdminMessage('Applicant restored to active list.')
-    } catch (_) {
+    } catch {
       setAdminError('Failed to restore applicant.')
     } finally {
       setRestoring(false)
@@ -396,12 +315,7 @@ function AdminPage() {
     setAdminMessage(null)
     setAdminError(null)
     try {
-      const response = await fetch(`${apiBase}/api/applicants/${forceTarget.id}/force`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!response.ok) throw new Error()
-
+      await applicantAPI.forceDelete(token, forceTarget.id)
       setApplicants((prev) => {
         const remaining = prev.filter((a) => a.id !== forceTarget.id)
         setSelectedId((current) => {
@@ -414,7 +328,7 @@ function AdminPage() {
       })
       setForceTarget(null)
       setAdminMessage('Applicant permanently deleted.')
-    } catch (_) {
+    } catch {
       setAdminError('Failed to permanently delete applicant.')
     } finally {
       setForcing(false)
@@ -427,27 +341,13 @@ function AdminPage() {
     setStatusSaving(true)
 
     try {
-      const response = await fetch(`${apiBase}/api/applicants/${applicantId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status }),
-      })
-
-      if (!response.ok) {
-        const errorMessage = await extractError(response)
-        setAdminError(errorMessage)
-        return
-      }
-
-      const updated = await response.json()
+      const updated = await applicantAPI.update(token, applicantId, { status })
       setApplicants((previous) =>
         previous.map((item) => (item.id === updated.id ? updated : item))
       )
-      setAdminMessage('Status updated.')
-    } catch (err) {
+      setAdminMessage('Status updated. Reloading page...')
+      setTimeout(() => window.location.reload(), 1500)
+    } catch {
       setAdminError('Unable to update status. Please try again.')
     } finally {
       setStatusSaving(false)
@@ -649,8 +549,8 @@ function AdminPage() {
           <h3>Contact</h3>
           <div class="row"><span class="k">Email</span><span class="v">${esc(selectedApplicant.email_address)}</span></div>
           <div class="row"><span class="k">Phone</span><span class="v">${esc(selectedApplicant.contact_number)}</span></div>
-          <div class="row"><span class="k">Permanent Address</span><span class="v">${esc(selectedApplicant.permanent_address)}</span></div>
-          <div class="row"><span class="k">Current Address</span><span class="v">${esc(selectedApplicant.current_address)}</span></div>
+          <div class="row"><span class="k">Permanent Address</span><span class="v">${esc(formatText(selectedApplicant.permanent_address) || 'N/A')}</span></div>
+          <div class="row"><span class="k">Current Address</span><span class="v">${esc(formatText(selectedApplicant.current_address) || 'N/A')}</span></div>
           <div class="row"><span class="k">Gender</span><span class="v">${esc(selectedApplicant.gender)}</span></div>
           <div class="row"><span class="k">Civil Status</span><span class="v">${esc(selectedApplicant.civil_status)}</span></div>
           <div class="row"><span class="k">Birthdate</span><span class="v">${esc(selectedApplicant.birthdate ? new Date(selectedApplicant.birthdate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A')}</span></div>
@@ -660,8 +560,8 @@ function AdminPage() {
         <div class="card">
           <h3>Education</h3>
           <div class="row"><span class="k">Highest Level</span><span class="v">${esc(selectedApplicant.highest_education_level)}</span></div>
-          <div class="row"><span class="k">Course</span><span class="v">${esc(selectedApplicant.bachelors_degree_course)}</span></div>
-          <div class="row"><span class="k">School</span><span class="v">${esc(selectedApplicant.last_school_attended)}</span></div>
+          <div class="row"><span class="k">Course</span><span class="v">${esc(formatText(selectedApplicant.bachelors_degree_course) || 'N/A')}</span></div>
+          <div class="row"><span class="k">School</span><span class="v">${esc(formatText(selectedApplicant.last_school_attended) || 'N/A')}</span></div>
           <div class="row"><span class="k">Year Graduated</span><span class="v">${esc(selectedApplicant.year_graduated)}</span></div>
         </div>
 
@@ -670,7 +570,7 @@ function AdminPage() {
           <div class="pro-grid">
             <div class="row"><span class="k">Experience</span><span class="v">${esc(selectedApplicant.total_work_experience_years || 'N/A')} yrs</span></div>
             <div class="row"><span class="k">Expected Salary</span><span class="v">${esc(selectedApplicant.expected_salary ? `PHP ${Number(selectedApplicant.expected_salary).toLocaleString()}` : 'N/A')}</span></div>
-            <div class="row"><span class="k">Preferred Location</span><span class="v">${esc(selectedApplicant.preferred_work_location)}</span></div>
+            <div class="row"><span class="k">Preferred Location</span><span class="v">${esc(formatText(selectedApplicant.preferred_work_location) || 'N/A')}</span></div>
             <div class="row"><span class="k">PRC License</span><span class="v">${esc(selectedApplicant.prc_license)}</span></div>
             <div class="row"><span class="k">Vacancy Source</span><span class="v">${esc(selectedApplicant.vacancy_source)}</span></div>
           </div>
@@ -687,7 +587,7 @@ function AdminPage() {
     window.onload = () => {
       window.print();
     };
-  <\/script>
+  </script>
 </body>
 </html>`)
     win.document.close()
@@ -828,14 +728,14 @@ function AdminPage() {
               >
                 <option value="">All statuses</option>
                 <optgroup label="Pipeline">
-                  {pipelineStatusOptions.map((option) => (
+                  {PIPELINE_STATUS_OPTIONS.map((option) => (
                     <option key={`filter-${option}`} value={option}>
                       {formatStatus(option)}
                     </option>
                   ))}
                 </optgroup>
                 <optgroup label="End states">
-                  {terminalStatusOptions.map((option) => (
+                  {TERMINAL_STATUS_OPTIONS.map((option) => (
                     <option key={`filter-${option}`} value={option}>
                       {formatStatus(option)}
                     </option>
@@ -953,14 +853,14 @@ function AdminPage() {
                           }}
                         >
                           <optgroup label="Pipeline">
-                            {pipelineStatusOptions.map((option) => (
+                            {PIPELINE_STATUS_OPTIONS.map((option) => (
                               <option key={option} value={option}>
                                 {formatStatus(option)}
                               </option>
                             ))}
                           </optgroup>
                           <optgroup label="End states">
-                            {terminalStatusOptions.map((option) => (
+                            {TERMINAL_STATUS_OPTIONS.map((option) => (
                               <option key={option} value={option}>
                                 {formatStatus(option)}
                               </option>
@@ -1030,11 +930,11 @@ function AdminPage() {
                       </div>
                       <div className="admin-field">
                         <dt>Permanent Address</dt>
-                        <dd>{selectedApplicant.permanent_address}</dd>
+                        <dd>{formatText(selectedApplicant.permanent_address) || 'N/A'}</dd>
                       </div>
                       <div className="admin-field">
                         <dt>Current Address</dt>
-                        <dd>{selectedApplicant.current_address}</dd>
+                        <dd>{formatText(selectedApplicant.current_address) || 'N/A'}</dd>
                       </div>
                       <div className="admin-field">
                         <dt>Gender</dt>
@@ -1063,11 +963,11 @@ function AdminPage() {
                       </div>
                       <div className="admin-field">
                         <dt>Course</dt>
-                        <dd>{selectedApplicant.bachelors_degree_course || 'N/A'}</dd>
+                        <dd>{formatText(selectedApplicant.bachelors_degree_course) || 'N/A'}</dd>
                       </div>
                       <div className="admin-field">
                         <dt>School</dt>
-                        <dd>{selectedApplicant.last_school_attended}</dd>
+                        <dd>{formatText(selectedApplicant.last_school_attended) || 'N/A'}</dd>
                       </div>
                       <div className="admin-field">
                         <dt>Year Graduated</dt>
@@ -1088,7 +988,7 @@ function AdminPage() {
                       </div>
                       <div className="admin-field">
                         <dt>Preferred Location</dt>
-                        <dd>{selectedApplicant.preferred_work_location}</dd>
+                        <dd>{formatText(selectedApplicant.preferred_work_location) || 'N/A'}</dd>
                       </div>
                       <div className="admin-field">
                         <dt>PRC License</dt>
@@ -1115,30 +1015,26 @@ function AdminPage() {
                         >
                           {resumeLoading ? '⏳ Loading…' : showResume ? '▲ Hide Resume' : '👁 View Resume'}
                         </button>
-                        <a
+                        <button
+                          type="button"
                           className="admin-cv-btn admin-cv-btn-outline"
-                          href={`${apiBase}/api/applicants/${selectedApplicant.id}/cv`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={async (e) => {
+                          onClick={async () => {
                             // add token to download via a temporary anchor with blob
-                            e.preventDefault()
                             try {
-                              const res = await fetch(`${apiBase}/api/applicants/${selectedApplicant.id}/cv`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                              })
-                              const blob = await res.blob()
+                              const blob = await applicantAPI.getCv(token, selectedApplicant.id)
                               const url = URL.createObjectURL(blob)
                               const a = document.createElement('a')
                               a.href = url
                               a.download = `${selectedApplicant.last_name}_${selectedApplicant.first_name}_CV.${selectedApplicant.cv_path.split('.').pop()}`
                               a.click()
                               URL.revokeObjectURL(url)
-                            } catch (_) {}
+                            } catch {
+                              // silently fail
+                            }
                           }}
                         >
                           ⬇ Download
-                        </a>
+                        </button>
                       </div>
                     ) : (
                       <span className="admin-cv-missing">No CV uploaded</span>

@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import DatePicker from '../components/DatePicker'
 import Footer from '../components/Footer'
-import { apiBase } from '../utils/apiBase'
+import { positionAPI } from '../services/api'
+import { submitPublicApplicant } from '../services/publicApplicant'
+import {
+  EDUCATION_OPTIONS,
+  GENDER_OPTIONS,
+  VACANCY_SOURCE_OPTIONS,
+  CIVIL_STATUS_OPTIONS,
+} from '../utils/constants'
+import { extractXhrError, formatText } from '../utils/helpers'
 
 const initialForm = {
   position_applied_for: '',
@@ -26,47 +34,6 @@ const initialForm = {
   vacancy_source: '',
 }
 
-const educationOptions = [
-  { value: '', label: 'Select' },
-  { value: 'Elementary', label: 'Elementary' },
-  { value: 'High School', label: 'High School' },
-  { value: 'Senior High', label: 'Senior High' },
-  { value: 'Vocational', label: 'Vocational' },
-  { value: 'College', label: 'College' },
-  { value: 'Post Grad', label: 'Post Grad' }
-]
-
-const genderOptions = [
-  { value: '', label: 'Select' },
-  { value: 'Male', label: 'Male' },
-  { value: 'Female', label: 'Female' },
-  { value: 'Other', label: 'Other / Prefer to self-describe' }
-]
-
-const vacancySourceOptions = [
-  { value: '', label: 'Select' },
-  { value: 'JobStreet', label: '💼 JobStreet' },
-  { value: 'LinkedIn', label: '🔗 LinkedIn' },
-  { value: 'Indeed', label: '🔍 Indeed' },
-  { value: 'Kalibrr', label: '🎯 Kalibrr' },
-  { value: 'Facebook / Social Media', label: '📱 Facebook / Social Media' },
-  { value: 'Company Website', label: '🌐 Company Website' },
-  { value: 'Referral from Employee', label: '🤝 Referral from an Employee' },
-  { value: 'Job Fair', label: '🏢 Job Fair / Recruitment Event' },
-  { value: 'Walk-in', label: '🚶 Walk-in' },
-  { value: 'Other', label: '✏️ Other' },
-]
-
-const civilStatusOptions = [
-  { value: '', label: 'Select' },
-  { value: 'Single', label: 'Single' },
-  { value: 'Married', label: 'Married' },
-  { value: 'Widowed', label: 'Widowed / Widower' },
-  { value: 'Legally Separated', label: 'Legally Separated' },
-  { value: 'Annulled', label: 'Annulled' },
-  { value: 'Divorced', label: 'Divorced (foreign national)' },
-]
-
 const formSteps = [
   { id: 1, title: 'Resume' },
   { id: 2, title: 'Identity' },
@@ -75,69 +42,6 @@ const formSteps = [
   { id: 5, title: 'Review' },
 ]
 
-const extractError = async (response) => {
-  try {
-    const payload = await response.json()
-    if (payload?.message) {
-      return payload.message
-    }
-    if (payload?.errors) {
-      const firstKey = Object.keys(payload.errors)[0]
-      if (firstKey) {
-        return payload.errors[firstKey][0]
-      }
-    }
-  } catch (err) {
-    return null
-  }
-
-  return 'Unable to submit your application. Please try again.'
-}
-
-const extractXhrError = (xhr) => {
-  try {
-    const payload = JSON.parse(xhr.responseText || '{}')
-    if (payload?.message) {
-      return payload.message
-    }
-    if (payload?.errors) {
-      const firstKey = Object.keys(payload.errors)[0]
-      if (firstKey) {
-        return payload.errors[firstKey][0]
-      }
-    }
-  } catch (err) {
-    // ignore parse errors
-  }
-
-  return 'Unable to submit your application. Please try again.'
-}
-
-const submitPublicApplicant = (url, formData, { onProgress, timeoutMs = 120000 } = {}) => {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-
-    xhr.open('POST', url, true)
-    xhr.responseType = 'text'
-    xhr.timeout = timeoutMs
-    xhr.setRequestHeader('Accept', 'application/json')
-
-    if (xhr.upload && typeof onProgress === 'function') {
-      xhr.upload.onprogress = (event) => {
-        if (!event.lengthComputable) return
-        const percent = Math.max(0, Math.min(100, Math.round((event.loaded / event.total) * 100)))
-        onProgress(percent)
-      }
-    }
-
-    xhr.onload = () => resolve(xhr)
-    xhr.onerror = () => reject(new Error('Network error'))
-    xhr.ontimeout = () => reject(new Error('Timeout'))
-    xhr.onabort = () => reject(new Error('Aborted'))
-
-    xhr.send(formData)
-  })
-}
 
 function ApplyPage() {
   const [form, setForm] = useState(initialForm)
@@ -320,19 +224,12 @@ function ApplyPage() {
 
     const loadPositions = async () => {
       try {
-        const response = await fetch(`${apiBase}/api/positions`)
-        
-
-        if (!response.ok) {
-          throw new Error('Failed to load positions')
-        }
-
-        const payload = await response.json()
+        const payload = await positionAPI.getPublic()
         if (isMounted) {
           setPositions(payload)
           setPositionsError(null)
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setPositionsError('Unable to load positions right now.')
         }
@@ -393,8 +290,7 @@ function ApplyPage() {
     }
 
     try {
-      const url = `${apiBase}/api/public/applicants`
-      const xhr = await submitPublicApplicant(url, buildFormData(), {
+      const xhr = await submitPublicApplicant(buildFormData(), {
         onProgress: (percent) => {
           setUploadProgress(percent)
           if (percent >= 100) {
@@ -418,12 +314,8 @@ function ApplyPage() {
       setHoneypotWebsite('')
       setFormStartedAt(Date.now())
       setTermsAccepted(false)
-    } catch (err) {
-      if (String(err?.message || '').toLowerCase().includes('timeout')) {
-        setError('Submission is taking too long. Please check your connection and try again.')
-      } else {
-        setError('Network error. Please try again in a moment.')
-      }
+    } catch {
+      setError('Network error. Please try again in a moment.')
     } finally {
       setSubmitting(false)
       setSubmitPhase(null)
@@ -745,7 +637,7 @@ function ApplyPage() {
                     required
                     className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
                   >
-                    {genderOptions.map((option) => (
+                    {GENDER_OPTIONS.map((option) => (
                       <option key={`gender-${option.value || 'empty'}`} value={option.value}>
                         {option.label}
                       </option>
@@ -774,7 +666,7 @@ function ApplyPage() {
                     required
                     className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
                   >
-                    {civilStatusOptions.map((option) => (
+                    {CIVIL_STATUS_OPTIONS.map((option) => (
                       <option key={`civil-${option.value || 'empty'}`} value={option.value}>
                         {option.label}
                       </option>
@@ -813,7 +705,7 @@ function ApplyPage() {
                   required
                   className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
                 >
-                  {educationOptions.map((option) => (
+                  {EDUCATION_OPTIONS.map((option) => (
                     <option key={`education-${option.value || 'empty'}`} value={option.value}>
                       {option.label}
                     </option>
@@ -942,7 +834,7 @@ function ApplyPage() {
                   className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
                   required
                 >
-                  {vacancySourceOptions.map((option) => (
+                  {VACANCY_SOURCE_OPTIONS.map((option) => (
                     <option key={`source-${option.value || 'empty'}`} value={option.value}>
                       {option.label}
                     </option>
@@ -983,8 +875,8 @@ function ApplyPage() {
                     <div className="review-item"><strong>Gender</strong><span>{displayValue(resolvedGender)}</span></div>
                     <div className="review-item"><strong>Civil status</strong><span>{displayValue(form.civil_status)}</span></div>
                     <div className="review-item"><strong>Birthdate</strong><span>{displayValue(form.birthdate)}</span></div>
-                    <div className="review-item review-item-full"><strong>Permanent address</strong><span>{displayValue(form.permanent_address)}</span></div>
-                    <div className="review-item review-item-full"><strong>Current address</strong><span>{displayValue(form.current_address)}</span></div>
+                    <div className="review-item review-item-full"><strong>Permanent address</strong><span>{displayValue(formatText(form.permanent_address))}</span></div>
+                    <div className="review-item review-item-full"><strong>Current address</strong><span>{displayValue(formatText(form.current_address))}</span></div>
                   </div>
                 </div>
 
@@ -995,9 +887,9 @@ function ApplyPage() {
                   </div>
                   <div className="review-grid">
                     <div className="review-item"><strong>Highest education</strong><span>{displayValue(form.highest_education_level)}</span></div>
-                    <div className="review-item"><strong>Degree course</strong><span>{displayValue(form.bachelors_degree_course)}</span></div>
+                    <div className="review-item"><strong>Degree course</strong><span>{displayValue(formatText(form.bachelors_degree_course))}</span></div>
                     <div className="review-item"><strong>Year graduated</strong><span>{displayValue(form.year_graduated)}</span></div>
-                    <div className="review-item"><strong>Last school</strong><span>{displayValue(form.last_school_attended)}</span></div>
+                    <div className="review-item"><strong>Last school</strong><span>{displayValue(formatText(form.last_school_attended))}</span></div>
                     <div className="review-item"><strong>PRC license</strong><span>{displayValue(form.prc_license)}</span></div>
                     <div className="review-item"><strong>Work experience</strong><span>{displayValue(form.total_work_experience_years) === 'Not provided' ? 'Not provided' : `${form.total_work_experience_years} years`}</span></div>
                   </div>
@@ -1012,7 +904,7 @@ function ApplyPage() {
                     <div className="review-item"><strong>Contact number</strong><span>{displayValue(form.contact_number)}</span></div>
                     <div className="review-item"><strong>Email address</strong><span>{displayValue(form.email_address)}</span></div>
                     <div className="review-item"><strong>Expected salary</strong><span>{formatCurrency(form.expected_salary)}</span></div>
-                    <div className="review-item"><strong>Preferred location</strong><span>{displayValue(form.preferred_work_location)}</span></div>
+                    <div className="review-item"><strong>Preferred location</strong><span>{displayValue(formatText(form.preferred_work_location))}</span></div>
                     <div className="review-item review-item-full"><strong>Vacancy source</strong><span>{displayValue(resolvedVacancySource)}</span></div>
                   </div>
                 </div>

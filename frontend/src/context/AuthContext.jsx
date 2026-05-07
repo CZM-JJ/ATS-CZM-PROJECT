@@ -1,15 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { apiBase } from '../utils/apiBase'
+import { createContext, useContext, useLayoutEffect, useState } from 'react'
+import { authAPI } from '../services/api'
+import { PERMISSION_DEFAULTS } from '../utils/constants'
 
 const AuthContext = createContext(null)
-
-const PERMISSION_DEFAULTS = {
-  canEdit:            ['admin', 'hr_manager', 'hr_supervisor'],
-  canDelete:          ['admin', 'hr_manager', 'hr_supervisor'],
-  canManagePositions: ['admin', 'hr_manager', 'hr_supervisor'],
-  canViewAnalytics:   ['admin', 'hr_manager', 'hr_supervisor'],
-  canManageUsers:     ['admin'],
-}
 
 export function AuthProvider({ children }) {
   const [token, setToken]           = useState(() => localStorage.getItem('ats_token') || '')
@@ -17,40 +10,31 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading]   = useState(true)
   const [permissions, setPermissions] = useState(PERMISSION_DEFAULTS)
 
-  // Load user profile
-  useEffect(() => {
+  // Load user profile and reset state when token changes
+  useLayoutEffect(() => {
     if (!token) {
-      setUser(null)
-      setIsLoading(false)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUser(() => null)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPermissions(() => PERMISSION_DEFAULTS)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsLoading(() => false)
       return
     }
 
-    fetch(`${apiBase}/api/me`, {
-      credentials: 'include',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Invalid token')
-        return res.json()
-      })
-      .then((profile) => setUser(profile))
+    setIsLoading(() => true)
+    authAPI.getCurrentUser(token)
+      .then((profile) => setUser(() => profile))
       .catch(() => {
-        setToken('')
+        setToken(() => '')
         localStorage.removeItem('ats_token')
-        setUser(null)
+        setUser(() => null)
       })
-      .finally(() => setIsLoading(false))
-  }, [token])
+      .finally(() => setIsLoading(() => false))
 
-  // Load permissions whenever token changes
-  useEffect(() => {
-    if (!token) { setPermissions(PERMISSION_DEFAULTS); return }
-    fetch(`${apiBase}/api/settings/permissions`, {
-      credentials: 'include',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data) setPermissions(data) })
+    // Load permissions
+    authAPI.getPermissions(token)
+      .then((data) => { if (data) setPermissions(() => data) })
       .catch(() => {}) // silently fall back to defaults
   }, [token])
 
@@ -61,11 +45,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     if (token) {
-      await fetch(`${apiBase}/api/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {})
+      await authAPI.logout(token).catch(() => {})
     }
     localStorage.removeItem('ats_token')
     setToken('')
@@ -80,6 +60,7 @@ export function AuthProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
@@ -87,6 +68,7 @@ export function useAuth() {
 }
 
 // ── Role helpers ───────────────────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export function useRole() {
   const { user, permissions } = useAuth()
   const role = user?.role ?? null
@@ -107,5 +89,3 @@ export function useRole() {
     hasRole: (...roles) => roles.includes(role),
   }
 }
-
-export { PERMISSION_DEFAULTS }

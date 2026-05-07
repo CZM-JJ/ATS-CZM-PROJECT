@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useLayoutEffect, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 
 const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
@@ -86,12 +86,14 @@ export default function DatePicker({ name, value, onChange, required, placeholde
   }, [])
 
   // Sync view when value changes externally
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (parsed) {
-      setViewYear(parsed.year)
-      setViewMonth(parsed.month)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setViewYear(() => parsed.year)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setViewMonth(() => parsed.month)
     }
-  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [value, parsed])  
 
   // Recalculate on open, scroll, resize
   useEffect(() => {
@@ -125,19 +127,20 @@ export default function DatePicker({ name, value, onChange, required, placeholde
     const newVal = formatValue(viewYear, viewMonth, day)
     onChange({ target: { name, value: newVal } })
     setOpen(false)
-  }, [viewYear, viewMonth, name, onChange])
+  }, [viewYear, viewMonth, name, onChange, setOpen])  
 
   const clearDate = useCallback(() => {
     onChange({ target: { name, value: '' } })
   }, [name, onChange])
 
   const goToToday = useCallback(() => {
-    const newVal = formatValue(today.getFullYear(), today.getMonth(), today.getDate())
+    const td = new Date()
+    const newVal = formatValue(td.getFullYear(), td.getMonth(), td.getDate())
     onChange({ target: { name, value: newVal } })
-    setViewYear(today.getFullYear())
-    setViewMonth(today.getMonth())
+    setViewYear(td.getFullYear())
+    setViewMonth(td.getMonth())
     setOpen(false)
-  }, [name, onChange]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, onChange, setViewYear, setViewMonth, setOpen])  
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }

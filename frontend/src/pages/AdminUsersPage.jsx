@@ -1,49 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useAuth, useRole, PERMISSION_DEFAULTS } from '../context/AuthContext'
+import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-import { apiBase } from '../utils/apiBase'
-
-const ROLE_OPTIONS = [
-  {
-    value:       'admin',
-    label:       'Administrator',
-    desc:        'Full access to everything — users, positions, analytics, all applicant actions.',
-    icon:        '👑',
-    activeBg:    'rgba(15,61,46,0.12)',
-    color:       '#0f3d2e',
-    border:      'rgba(15,61,46,0.30)',
-  },
-  {
-    value:       'hr_manager',
-    label:       'HR Manager',
-    desc:        'Edit applicants, change status, view analytics. No positions or user management.',
-    icon:        '🏢',
-    activeBg:    'rgba(74,127,191,0.14)',
-    color:       '#2d5f8a',
-    border:      'rgba(74,127,191,0.35)',
-  },
-  {
-    value:       'hr_supervisor',
-    label:       'HR Supervisor',
-    desc:        'Same as HR Manager — review applicants, add notes, view analytics.',
-    icon:        '🔍',
-    activeBg:    'rgba(120,80,180,0.12)',
-    color:       '#5b3d99',
-    border:      'rgba(120,80,180,0.30)',
-  },
-  {
-    value:       'recruiter',
-    label:       'Recruiter',
-    desc:        'View applicants and add notes only. No edit, delete, or management access.',
-    icon:        '📋',
-    activeBg:    'rgba(200,164,65,0.14)',
-    color:       '#8a6a16',
-    border:      'rgba(200,164,65,0.40)',
-  },
-]
-
-const ROLE_MAP = Object.fromEntries(ROLE_OPTIONS.map(r => [r.value, r]))
+import Toast from '../components/Toast'
+import { userAPI } from '../services/api'
+import { ROLE_OPTIONS, ROLE_MAP, PERMISSION_DEFAULTS } from '../utils/constants'
 
 const emptyForm = { name: '', email: '', password: '', role: 'recruiter' }
 
@@ -96,14 +57,15 @@ export default function AdminUsersPage() {
   const load = async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch(`${apiBase}/api/users`, { credentials: 'include', headers: { Authorization: `Bearer ${token}` } })
-      if (!res.ok) throw new Error()
-      setUsers(await res.json())
+      const usersData = await userAPI.getAll(token)
+      setUsers(usersData)
     } catch { setError('Failed to load users.') }
     finally  { setLoading(false) }
   }
 
-  useEffect(() => { if (token) load() }, [token])
+  useEffect(() => { if (token) load() 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
 
   const openCreate = () => { setEditUser(null); setForm(emptyForm); setFormError(null); setShowPw(false); setModalOpen(true) }
   const openEdit   = (u) => { setEditUser(u); setForm({ name: u.name, email: u.email, password: '', role: u.role }); setFormError(null); setShowPw(false); setModalOpen(true) }
@@ -115,18 +77,9 @@ export default function AdminUsersPage() {
     try {
       const body = { ...form }
       if (editUser && !body.password) delete body.password
-      const res = await fetch(editUser ? `${apiBase}/api/users/${editUser.id}` : `${apiBase}/api/users`, {
-        method:  editUser ? 'PUT' : 'POST',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const p = await res.json().catch(() => ({}))
-        setFormError(p?.errors ? Object.values(p.errors).flat()[0] : p?.message || 'Save failed.')
-        return
-      }
-      const saved = await res.json()
+      const saved = editUser
+        ? await userAPI.update(token, editUser.id, body)
+        : await userAPI.create(token, body)
       setUsers(prev => editUser ? prev.map(u => u.id === saved.id ? saved : u) : [...prev, saved])
       setSuccess(editUser ? 'User updated successfully.' : 'New user created successfully.')
       closeModal()
@@ -139,11 +92,7 @@ export default function AdminUsersPage() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
-      const res = await fetch(`${apiBase}/api/users/${deleteTarget.id}`, {
-        method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include',
-      })
-      if (!res.ok) { const p = await res.json().catch(() => ({})); setError(p?.message || 'Failed to delete.'); return }
+      await userAPI.delete(token, deleteTarget.id)
       setUsers(prev => prev.filter(u => u.id !== deleteTarget.id))
       setSuccess('User deleted.'); setTimeout(() => setSuccess(null), 4000)
     } catch { setError('Network error.') }
@@ -154,14 +103,7 @@ export default function AdminUsersPage() {
     if (!localPerms) return
     setPermSaving(true); setPermError(null)
     try {
-      const res = await fetch(`${apiBase}/api/settings/permissions`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(localPerms),
-      })
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Save failed.')
-      const saved = await res.json()
+      const saved = await userAPI.updatePermissions(token, localPerms)
       setGlobalPerms(saved); setLocalPerms(null)
       setPermSuccess('Permissions updated.'); setTimeout(() => setPermSuccess(null), 4000)
     } catch (err) { setPermError(err.message) }
@@ -197,12 +139,12 @@ export default function AdminUsersPage() {
         <span className="admin-welcome-date">{todayLabel}</span>
       </div>
 
-      {/* ── Toasts ── */}
-      {error   && <div className="um-toast um-toast-error"   onClick={() => setError(null)}>  <span>⚠</span> {error}   <button>✕</button></div>}
-      {success && <div className="um-toast um-toast-success" onClick={() => setSuccess(null)}><span>✓</span> {success} <button>✕</button></div>}
-
       {/* ── Users table ── */}
       <div className="admin-card um-card">
+        <div className="admin-toast-stack" aria-live="polite">
+          {success ? <div className="admin-alert success">{success}</div> : null}
+          {error ? <div className="admin-alert error">{error}</div> : null}
+        </div>
         <div className="um-card-head">
           <div className="um-card-title-wrap">
             <h3 className="um-card-title">System Users</h3>

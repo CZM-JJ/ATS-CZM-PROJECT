@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-import { apiBase } from '../utils/apiBase'
+import { analyticsAPI } from '../services/api'
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area
 } from 'recharts'
+import { PERIOD_OPTIONS } from '../utils/constants'
 
 const STATUS_META = {
   new:                 { label: 'New',                  color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
@@ -18,14 +19,6 @@ const STATUS_META = {
   rejected:            { label: 'Rejected',             color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
   withdrawn:           { label: 'Withdrawn',            color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
 }
-
-const PERIOD_OPTIONS = [
-  { label: 'Last 7 Days', value: 7, shortLabel: '7D' },
-  { label: 'Last 30 Days', value: 30, shortLabel: '30D' },
-  { label: 'Last 90 Days', value: 90, shortLabel: '90D' },
-  { label: 'Last 12 Months', value: 365, shortLabel: '12M' },
-  { label: 'All Time', value: 0, shortLabel: 'ALL' },
-]
 
 // Modern tooltip style
 const tooltipStyle = {
@@ -273,13 +266,8 @@ function AdminAnalyticsPage() {
     setAnimateCharts(false)
     setError(null)
     try {
-      const qs = period > 0 ? `?days=${period}` : ''
-      const res = await fetch(`${apiBase}/api/dashboard/overview${qs}`, {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error()
-      const data = await res.json()
+      const params = period > 0 ? { days: period } : {}
+      const data = await analyticsAPI.getDashboard(token, params)
       setDashboard(data)
       setTimeout(() => setAnimateCharts(true), 100)
     } catch {
@@ -326,19 +314,19 @@ function AdminAnalyticsPage() {
   const pipelineRate = total > 0 ? ((inPipeline / total) * 100).toFixed(1) : 0
   const rejectionRate = total > 0 ? ((rejected / total) * 100).toFixed(1) : 0
 
-  // Pipeline data for donut chart
-  const pipelineData = useMemo(() =>
-    Object.entries(STATUS_META)
-      .map(([key, meta]) => ({
-        name: meta.label,
-        key,
-        value: dashboard?.by_status?.find((s) => s.status === key)?.total ?? 0,
-        color: meta.color,
-      }))
-      .filter((d) => d.value > 0)
-      .sort((a, b) => b.value - a.value),
-    [dashboard?.by_status]
-  )
+  // Pipeline data for donut chart (reserved for future use)
+  // const pipelineData = useMemo(() =>
+  //   Object.entries(STATUS_META)
+  //     .map(([key, meta]) => ({
+  //       name: meta.label,
+  //       key,
+  //       value: dashboard?.by_status?.find((s) => s.status === key)?.total ?? 0,
+  //       color: meta.color,
+  //     }))
+  //     .filter((d) => d.value > 0)
+  //     .sort((a, b) => b.value - a.value),
+  //   [dashboard?.by_status]
+  // )
 
   // Pipeline donut data - show all statuses including hired and rejected
   const pipelineDonutData = useMemo(() => {

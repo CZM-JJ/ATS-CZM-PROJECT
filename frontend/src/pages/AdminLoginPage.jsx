@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { apiBase } from '../utils/apiBase'
+import { authAPI } from '../services/api'
 
 export default function AdminLoginPage() {
   const { token, login } = useAuth()
@@ -22,25 +22,13 @@ export default function AdminLoginPage() {
     setError(null)
     setLoading(true)
     try {
-      const res = await fetch(`${apiBase}/api/login`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}))
-        const msg = payload?.errors
-          ? Object.values(payload.errors).flat()[0]
-          : payload?.message || 'Invalid credentials.'
-        setError(msg)
-        return
-      }
-      const payload = await res.json()
-      login(payload.token)
+      const { token: accessToken } = await authAPI.login(form)
+      login(accessToken)
       navigate('/admin', { replace: true })
-    } catch {
-      setError('Network error. Please try again.')
+    } catch (err) {
+      const payload = err?.message ? { message: err.message } : {}
+      const msg = payload?.message || 'Invalid credentials.'
+      setError(msg)
     } finally {
       setLoading(false)
     }

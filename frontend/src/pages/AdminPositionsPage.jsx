@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-import { apiBase } from '../utils/apiBase'
+import Toast from '../components/Toast'
+import { positionAPI } from '../services/api'
 
 
 const emptyForm = {
@@ -22,6 +23,7 @@ function AdminPositionsPage() {
   const [positions, setPositions]   = useState([])
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
+  const [success, setSuccess]       = useState(null)
   const [page, setPage]             = useState(1)
   const [lastPage, setLastPage]     = useState(1)
   const [total, setTotal]           = useState(0)
@@ -60,21 +62,15 @@ function AdminPositionsPage() {
     if (!window.confirm(`Delete ${selectedIds.length} selected position(s)?`)) return
     setLoading(true)
     try {
-      const res = await fetch(`${apiBase}/api/positions/bulk`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ids: selectedIds }),
-      })
-      if (!res.ok) throw new Error()
+      await positionAPI.bulkDelete(token, selectedIds)
       setPositions((prev) => prev.filter((p) => !selectedIds.includes(p.id)))
       setTotal((t) => t - selectedIds.length)
       setSelectedIds([])
+      setError(null)
+      setSuccess(`${selectedIds.length} position${selectedIds.length !== 1 ? 's' : ''} deleted.`)
     } catch {
       setError('Failed to delete selected positions.')
+      setSuccess(null)
     } finally {
       setLoading(false)
     }
@@ -105,12 +101,7 @@ function AdminPositionsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${apiBase}/api/positions/admin?page=${p}&per_page=20`, {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error()
-      const payload = await res.json()
+      const payload = await positionAPI.getPaginated(token, p)
       setPositions(payload.data || [])
       setPage(payload.meta?.current_page ?? payload.current_page ?? 1)
       setLastPage(payload.meta?.last_page ?? payload.last_page ?? 1)
@@ -125,6 +116,7 @@ function AdminPositionsPage() {
   useEffect(() => {
     if (!token) return
     loadPositions(page)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, page])
 
   const openAdd = () => {
@@ -162,6 +154,7 @@ function AdminPositionsPage() {
 
   const handleSave = async (e) => {
     e.preventDefault()
+    if (saving) return
     setSaving(true)
     setFormError(null)
     try {
@@ -173,21 +166,9 @@ function AdminPositionsPage() {
         salary_max: form.salary_max !== '' ? Number(form.salary_max) : null,
         is_active: form.is_active,
       }
-      const url    = editing ? `${apiBase}/api/positions/${editing.id}` : `${apiBase}/api/positions`
-      const method = editing ? 'PATCH' : 'POST'
-      const res = await fetch(url, {
-        method,
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}))
-        const msg = payload?.message || Object.values(payload?.errors || {})?.[0]?.[0] || 'Failed to save.'
-        setFormError(msg)
-        return
-      }
-      const saved = await res.json()
+      const saved = editing
+        ? await positionAPI.update(token, editing.id, body)
+        : await positionAPI.create(token, body)
       if (editing) {
         setPositions((prev) => prev.map((p) => (p.id === saved.id ? saved : p)))
       } else {
@@ -205,14 +186,7 @@ function AdminPositionsPage() {
   const handleToggleActive = async (position) => {
     setTogglingId(position.id)
     try {
-      const res = await fetch(`${apiBase}/api/positions/${position.id}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !position.is_active }),
-      })
-      if (!res.ok) throw new Error()
-      const updated = await res.json()
+      const updated = await positionAPI.toggle(token, position.id, !position.is_active)
       setPositions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
     } catch {
       setError('Failed to toggle status.')
@@ -225,17 +199,15 @@ function AdminPositionsPage() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
-      const res = await fetch(`${apiBase}/api/positions/${deleteTarget.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error()
+      await positionAPI.delete(token, deleteTarget.id)
       setPositions((prev) => prev.filter((p) => p.id !== deleteTarget.id))
       setTotal((t) => t - 1)
       setDeleteTarget(null)
+      setError(null)
+      setSuccess('Position deleted successfully.')
     } catch {
       setError('Failed to delete position.')
+      setSuccess(null)
     } finally {
       setDeleting(false)
     }
@@ -274,6 +246,7 @@ function AdminPositionsPage() {
         <span className="admin-welcome-date">{todayLabel}</span>
       </div>
 
+
       {/* ── Main card ── */}
       <div className="admin-card" style={{ width: '100%' }}>
         <div className="admin-card-head">
@@ -287,7 +260,10 @@ function AdminPositionsPage() {
           </button>
         </div>
 
-        {error && <div className="admin-alert error">{error}</div>}
+        <div className="admin-toast-stack" aria-live="polite">
+          {success ? <div className="admin-alert success">{success}</div> : null}
+          {error ? <div className="admin-alert error">{error}</div> : null}
+        </div>
 
         <div className="admin-table-wrap" style={{ width: '100%', padding: 0, margin: 0 }}>
           <table className="admin-table" style={{ width: '100%' }}>

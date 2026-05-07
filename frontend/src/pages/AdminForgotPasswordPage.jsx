@@ -1,18 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { apiBase } from '../utils/apiBase'
-
-const extractError = async (response) => {
-  try {
-    const payload = await response.json()
-    if (payload?.message) return payload.message
-    if (payload?.errors) {
-      const firstKey = Object.keys(payload.errors)[0]
-      if (firstKey) return payload.errors[firstKey][0]
-    }
-  } catch { return null }
-  return 'Unable to complete the request. Please try again.'
-}
+import { authAPI } from '../services/api'
 
 function AdminForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -25,16 +13,13 @@ function AdminForgotPasswordPage() {
     setError(null)
     setLoading(true)
     try {
-      const response = await fetch(`${apiBase}/api/forgot-password`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      if (!response.ok) { setError(await extractError(response)); return }
+      await authAPI.forgotPassword(email)
       setSent(true)
-    } catch { setError('Unable to send reset link. Please try again.') }
-    finally { setLoading(false) }
+    } catch {
+      setError('Unable to send reset link. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/AuthContext'
-import { apiBase } from '../utils/apiBase'
+import { notificationAPI } from '../services/api'
+import { ROLE_LABELS } from '../utils/constants'
 
 export default function AdminLayout({ children, pageTitle }) {
   const { user, token, logout } = useAuth()
   const { isAdmin, canViewAnalytics, canManagePositions, canManageUsers } = useRole()
   const navigate = useNavigate()
-
-  const ROLE_LABELS = { admin: 'Administrator', hr_manager: 'HR Manager', hr_supervisor: 'HR Supervisor', recruiter: 'Recruiter' }
 
   const [navOpen, setNavOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -44,12 +43,7 @@ export default function AdminLayout({ children, pageTitle }) {
     setNotifLoading(true)
     setNotifError(null)
     try {
-      const res = await fetch(`${apiBase}/api/notifications`, {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error()
-      const payload = await res.json()
+      const payload = await notificationAPI.getAll(token)
       setNotifPayload(payload)
     } catch {
       setNotifError('Unable to load notifications.')
@@ -61,6 +55,7 @@ export default function AdminLayout({ children, pageTitle }) {
   useEffect(() => {
     if (!token) return
     fetchNotifications()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   const notifications = useMemo(() => {
@@ -108,35 +103,31 @@ export default function AdminLayout({ children, pageTitle }) {
   const markNotifRead = async (id) => {
     if (!token) return
     try {
-      await fetch(`${apiBase}/api/notifications/${id}/read`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      await notificationAPI.markRead(token, id)
       setNotifPayload((prev) => ({
         ...prev,
         unread_count: Math.max(0, (prev.unread_count ?? 0) - 1),
         unread: (prev.unread || []).filter((x) => x.id !== id),
         recent: (prev.recent || []).map((x) => (x.id === id ? { ...x, read_at: new Date().toISOString() } : x)),
       }))
-    } catch (_) {}
+    } catch {
+      // silently fail
+    }
   }
 
   const markAllRead = async () => {
     if (!token) return
     try {
-      await fetch(`${apiBase}/api/notifications/read-all`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      await notificationAPI.markAllRead(token)
       setNotifPayload((prev) => ({
         ...prev,
         unread_count: 0,
         unread: [],
         recent: (prev.recent || []).map((x) => ({ ...x, read_at: x.read_at ?? new Date().toISOString() })),
       }))
-    } catch (_) {}
+    } catch {
+      // silently fail
+    }
   }
 
   const handleNotificationClick = async (notification) => {

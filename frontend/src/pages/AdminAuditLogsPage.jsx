@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-import { apiBase } from '../utils/apiBase'
+import { auditLogAPI } from '../services/api'
+import { PER_PAGE_OPTIONS } from '../utils/constants'
+import { timeAgo } from '../utils/helpers'
 
 const ACTION_META = {
   login:         { label: 'Login',         cls: 'audit-badge-login',   icon: '🔑' },
@@ -44,15 +46,6 @@ function formatDate(iso) {
   })
 }
 
-function timeAgo(iso) {
-  if (!iso) return ''
-  const diff = Math.floor((Date.now() - new Date(iso)) / 1000)
-  if (diff < 60)    return `${diff}s ago`
-  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
-}
-
 // Build page number array with ellipsis: e.g. [1, '…', 4, 5, 6, '…', 12]
 function buildPageButtons(current, last) {
   if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
@@ -67,7 +60,6 @@ function buildPageButtons(current, last) {
 }
 
 const emptyFilters = { action: '', entity: '', user_name: '', start_date: '', end_date: '' }
-const PER_PAGE_OPTIONS = [20, 30, 50, 100]
 
 export default function AdminAuditLogsPage() {
   const { token } = useAuth()
@@ -81,22 +73,19 @@ export default function AdminAuditLogsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
 
-  const load = useCallback((f, p, pp) => {
+  const load = useCallback(async (f, p, pp) => {
     setLoading(true)
     setError('')
-    const params = new URLSearchParams({ page: p, per_page: pp })
-    Object.entries(f).forEach(([k, v]) => { if (v) params.set(k, v) })
-    fetch(`${apiBase}/api/audit-logs?${params}`, {
-      credentials: 'include',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => {
-        setLogs(data.data || [])
-        setMeta({ current_page: data.current_page, last_page: data.last_page, total: data.total })
-      })
-      .catch(() => setError('Failed to load audit logs.'))
-      .finally(() => setLoading(false))
+    try {
+      const params = { page: p, per_page: pp, ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)) }
+      const data = await auditLogAPI.getAll(token, params)
+      setLogs(data.data || [])
+      setMeta({ current_page: data.current_page, last_page: data.last_page, total: data.total })
+    } catch {
+      setError('Failed to load audit logs.')
+    } finally {
+      setLoading(false)
+    }
   }, [token])
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiBase } from '../utils/apiBase'
+import { auditLogAPI } from '../services/api'
 
 const STATUS_META = {
   reviewed:            { marker: '#3b82f6', label: '#1e40af', bg: '#eff6ff', badge: '#dbeafe', text: 'Application Reviewed' },
@@ -66,16 +66,9 @@ function ApplicantTimeline({ applicantId, token }) {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch(`${apiBase}/api/applicants/${applicantId}/timeline`, {
-          credentials: 'include',
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
-        if (!response.ok) throw new Error('Failed to load timeline')
-
-        const payload = await response.json()
+        const payload = await auditLogAPI.getTimeline(token, applicantId)
         setEvents(Array.isArray(payload) ? payload : [])
-      } catch (err) {
+      } catch {
         setError('Unable to load applicant timeline')
       } finally {
         setLoading(false)
