@@ -308,11 +308,13 @@ function AdminAnalyticsPage() {
   )
   const hired = dashboard?.by_status?.find(s => s.status === 'hired')?.total ?? 0
   const rejected = dashboard?.by_status?.find(s => s.status === 'rejected')?.total ?? 0
+  const withdrawn = dashboard?.by_status?.find(s => s.status === 'withdrawn')?.total ?? 0
 
-  // Conversion rates
+  // Conversion rates (as % of total applicants)
   const conversionRate = total > 0 ? ((hired / total) * 100).toFixed(1) : 0
   const pipelineRate = total > 0 ? ((inPipeline / total) * 100).toFixed(1) : 0
   const rejectionRate = total > 0 ? ((rejected / total) * 100).toFixed(1) : 0
+  const withdrawalRate = total > 0 ? ((withdrawn / total) * 100).toFixed(1) : 0
 
   // Pipeline data for donut chart (reserved for future use)
   // const pipelineData = useMemo(() =>

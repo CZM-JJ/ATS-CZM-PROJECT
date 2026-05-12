@@ -16,7 +16,7 @@ export default function Footer() {
             </div>
             <div>
               <p className="sf-company">CZARK MAK CORPORATION</p>
-              <p className="sf-tagline">Building careers, one application at a time.</p>
+              <p className="sf-tagline">CZM Group of Companies</p>
             </div>
           </div>
 
@@ -73,9 +73,8 @@ export default function Footer() {
                 {[
                   ['📋', 'Accuracy of Information', 'All information you provide is accurate, truthful, and complete. False or misleading information may result in disqualification or termination of employment.'],
                   ['📞', 'Consent to Contact', 'You consent to being contacted via the email and phone number provided for application updates, interview schedules, and job offer correspondence.'],
-                  ['🔒', 'Data Privacy & Confidentiality', 'Your data is used solely for recruitment, accessible only to authorized HR personnel, stored securely, and never sold or shared with unrelated third parties.'],
-                  ['📁', 'Document Retention', 'Your application and CV may be retained for up to 2 years from submission to consider you for future openings. After this period, data is securely deleted.'],
-                  ['⚖️', 'Your Rights', 'You may request access, correction, or deletion of your data, and may withdraw your application at any time before a final hiring decision.'],
+                  ['🔒', 'Data Privacy & Confidentiality', 'Your data is used solely for recruitment, stored securely, and never sold or shared with unrelated third parties.'],
+                  ['⚖️', 'Your Rights', 'You may request access, correction, or deletion of your data, and may withdraw your application at any time.'],
                   ['📄', 'Uploaded Documents', 'Attached files (CV, certificates) are stored securely and reviewed only by authorized HR staff involved in the hiring process.'],
                 ].map(([icon, title, body]) => (
                   <div className="terms-modal-section" key={title}>

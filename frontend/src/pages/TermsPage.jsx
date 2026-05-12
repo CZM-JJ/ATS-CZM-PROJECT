@@ -60,7 +60,6 @@ export default function TermsPage() {
               <p>Czark Mak Corporation is committed to protecting your personal information. The data you provide will be:</p>
               <ul className="terms-page-list">
                 <li>Used solely for recruitment and employment evaluation purposes</li>
-                <li>Accessible only to authorized HR personnel and hiring managers</li>
                 <li>Stored securely and protected against unauthorized access</li>
                 <li>Never sold, traded, or disclosed to unrelated third parties without your consent</li>
               </ul>
@@ -68,24 +67,15 @@ export default function TermsPage() {
           </section>
 
           <section className="terms-page-section">
-            <div className="terms-page-section-icon">📁</div>
-            <div>
-              <h2>4. Document Retention</h2>
-              <p>Your application data and submitted documents (including your résumé/CV) may be retained for a period of up to <strong>two (2) years</strong> from the date of submission. This allows us to consider you for future openings that match your profile.</p>
-              <p>After this period, your data will be securely deleted unless you have been hired, in which case it becomes part of your employee record in accordance with applicable labor laws.</p>
-            </div>
-          </section>
-
-          <section className="terms-page-section">
             <div className="terms-page-section-icon">⚖️</div>
             <div>
-              <h2>5. Your Rights</h2>
+              <h2>4. Your Rights</h2>
               <p>Under applicable data privacy laws, you have the right to:</p>
               <ul className="terms-page-list">
                 <li>Request access to the personal data we hold about you</li>
                 <li>Request correction of inaccurate or outdated information</li>
                 <li>Request deletion of your data (subject to legal obligations)</li>
-                <li>Withdraw your application at any time before a final hiring decision</li>
+                <li>Withdraw your application at any time</li>
               </ul>
               <p>To exercise any of these rights, please contact our HR department directly.</p>
             </div>
@@ -94,7 +84,7 @@ export default function TermsPage() {
           <section className="terms-page-section">
             <div className="terms-page-section-icon">📄</div>
             <div>
-              <h2>6. Uploaded Documents</h2>
+              <h2>5. Uploaded Documents</h2>
               <p>Any files you attach (résumé, CV, certificates) are stored securely on our servers. These documents are only reviewed by authorized HR staff involved in the hiring process. We do not share your documents with any external parties.</p>
             </div>
           </section>
@@ -102,7 +92,7 @@ export default function TermsPage() {
           <section className="terms-page-section">
             <div className="terms-page-section-icon">🔄</div>
             <div>
-              <h2>7. Changes to These Terms</h2>
+              <h2>6. Changes to These Terms</h2>
               <p>Czark Mak Corporation reserves the right to update these Terms and Conditions at any time. Any material changes will be reflected with an updated effective date. Continued use of our application portal after changes constitutes acceptance of the revised terms.</p>
             </div>
           </section>

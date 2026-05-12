@@ -66,6 +66,7 @@ function ApplyPage() {
   const [submitted, setSubmitted] = useState(false)
   const [sameAsPermanent, setSameAsPermanent] = useState(false)
   const formRef = useRef(null)
+  const formTopRef = useRef(null)
   const feedbackRef = useRef(null)
 
   const totalSteps = formSteps.length
@@ -262,6 +263,17 @@ function ApplyPage() {
   }, [submitted, message])
 
   useEffect(() => {
+    if (submitted) return
+    if (currentStep !== 5) return
+
+    const frameId = requestAnimationFrame(() => {
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+
+    return () => cancelAnimationFrame(frameId)
+  }, [currentStep, submitted])
+
+  useEffect(() => {
     if (!error) return
     const timer = setTimeout(() => setError(null), 5000)
     return () => clearTimeout(timer)
@@ -348,20 +360,7 @@ function ApplyPage() {
         <div className="apply-hero-inner">
           <div className="apply-hero-copy">
             <p className="apply-kicker">CZARK MAK CORPORATION</p>
-            <h1 className="apply-title apply-title-rotate">
-              <span className="apply-title-prefix">Build your career with us</span>
-              <span className="apply-rotator" aria-label="Rotating career keywords">
-                <span className="apply-rotator-track">
-                  <span>Careers</span>
-                  <span>Growth</span>
-                  <span>Success</span>
-                  <span>Vision</span>
-                  <span>Future</span>
-                  <span>CZM</span>
-                  <span>Careers</span>
-                </span>
-              </span>
-            </h1>
+            <h1 className="apply-title">CZM Group of Companies</h1>
             <p className="apply-lead">
               Submit your details and CV. Our recruiters will review your application and update you through email.
             </p>
@@ -389,7 +388,7 @@ function ApplyPage() {
         />
         <div className="card apply-card">
           <div className="card-body apply-card-body">
-            <div className="apply-form-header">
+            <div className="apply-form-header" ref={formTopRef}>
               <div>
                 <h2 className="apply-form-title">Application Form</h2>
                 <p className="apply-form-subtitle">Complete all required fields to submit.</p>
@@ -946,20 +945,10 @@ function ApplyPage() {
                       </span>
                       <div>
                         <strong>Privacy</strong>
-                        <p>Your data is kept confidential and used only for recruitment.</p>
+                        <p>Your data is kept confidential and used only for recruitment purposes.</p>
                       </div>
                     </div>
-                    <div className="terms-agreement-point">
-                      <span className="terms-point-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
-                        </svg>
-                      </span>
-                      <div>
-                        <strong>Retention</strong>
-                        <p>Your application may be kept for up to 2 years for future openings.</p>
-                      </div>
-                    </div>
+                    {/* Retention clause removed */}
                   </div>
                   <div className="terms-divider" />
                   <label className="terms-check-row">
@@ -1100,20 +1089,10 @@ function ApplyPage() {
                   </span>
                   <div>
                     <strong>Data Privacy &amp; Confidentiality</strong>
-                    <p>Your data is used solely for recruitment, accessible only to authorized HR personnel, stored securely, and never sold or shared with unrelated third parties.</p>
+                    <p>Your data is used solely for recruitment, stored securely, and never sold or shared with unrelated third parties.</p>
                   </div>
                 </div>
-                <div className="terms-modal-section">
-                  <span className="terms-modal-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
-                    </svg>
-                  </span>
-                  <div>
-                    <strong>Document Retention</strong>
-                    <p>Your application and CV may be retained for up to 2 years from submission to consider you for future openings. After this period, data is securely deleted.</p>
-                  </div>
-                </div>
+                {/* Document Retention section removed */}
                 <div className="terms-modal-section">
                   <span className="terms-modal-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -1125,7 +1104,7 @@ function ApplyPage() {
                   </span>
                   <div>
                     <strong>Your Rights</strong>
-                    <p>You may request access, correction, or deletion of your data, and may withdraw your application at any time before a final hiring decision.</p>
+                    <p>You may request access, correction, or deletion of your data, and may withdraw your application at any time.</p>
                   </div>
                 </div>
                 <div className="terms-modal-section">

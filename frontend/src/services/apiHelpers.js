@@ -1,15 +1,38 @@
 export const requestJson = async (url, options = {}, errorMessage = 'Request failed') => {
   const res = await fetch(url, options)
-  if (!res.ok) throw new Error(errorMessage)
-  if (res.status === 204 || res.status === 205) return null
   const text = await res.text()
+  let data = null
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch (e) {
+    data = null
+  }
+
+  if (!res.ok) {
+    const serverMsg = data && data.message ? data.message : errorMessage
+    throw new Error(serverMsg)
+  }
+
+  if (res.status === 204 || res.status === 205) return null
   if (!text) return null
-  return JSON.parse(text)
+  return data
 }
 
 export const requestBlob = async (url, options = {}, errorMessage = 'Request failed') => {
   const res = await fetch(url, options)
-  if (!res.ok) throw new Error(errorMessage)
+  if (!res.ok) {
+    const text = await res.text()
+    let data = null
+    try {
+      data = text ? JSON.parse(text) : null
+    } catch (e) {
+      data = null
+    }
+    const serverMsg = data && data.message
+      ? data.message
+      : `${errorMessage}${res.status ? ` (${res.status} ${res.statusText})` : ''}`
+    throw new Error(serverMsg)
+  }
   return res.blob()
 }
 

@@ -212,7 +212,11 @@ export const applicantAPI = {
     return requestBlob(
       `${apiBase}/api/applicants/${id}/cv`,
       {
-        headers: buildHeaders({ token }),
+        credentials: 'include',
+        headers: {
+          ...buildHeaders({ token }),
+          Accept: 'application/json',
+        },
       },
       'Failed to fetch CV'
     )

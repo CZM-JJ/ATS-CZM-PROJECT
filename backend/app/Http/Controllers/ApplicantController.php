@@ -324,9 +324,12 @@ class ApplicantController extends Controller
         }
 
         $fullPath  = Storage::disk('public')->path($applicant->cv_path);
-        $mimeType  = Storage::disk('public')->mimeType($applicant->cv_path);
+        $mimeType  = Storage::disk('public')->mimeType($applicant->cv_path) ?? 'application/octet-stream';
         $extension = pathinfo($applicant->cv_path, PATHINFO_EXTENSION);
-        $filename  = $applicant->last_name . '_' . $applicant->first_name . '_CV.' . $extension;
+        
+        // Sanitize filename to prevent header injection
+        $baseName  = str_replace(['"', "'", "\n", "\r"], '', $applicant->last_name . '_' . $applicant->first_name);
+        $filename  = $baseName . '_CV.' . $extension;
 
         return response()->file($fullPath, [
             'Content-Type'        => $mimeType,
