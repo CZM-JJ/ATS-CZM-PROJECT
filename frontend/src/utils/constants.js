@@ -37,43 +37,43 @@ export const ROLE_LABELS = {
 }
 
 export const ROLE_OPTIONS = [
-  {
-    value: 'admin',
-    label: 'Administrator',
-    desc: 'Full access to everything — users, positions, analytics, all applicant actions.',
-    icon: '👑',
-    activeBg: 'rgba(15,61,46,0.12)',
-    color: '#0f3d2e',
-    border: 'rgba(15,61,46,0.30)',
-  },
-  {
-    value: 'hr_manager',
-    label: 'HR Manager',
-    desc: 'Edit applicants, change status, view analytics. No positions or user management.',
-    icon: '🏢',
-    activeBg: 'rgba(74,127,191,0.14)',
-    color: '#2d5f8a',
-    border: 'rgba(74,127,191,0.35)',
-  },
-  {
-    value: 'hr_supervisor',
-    label: 'HR Supervisor',
-    desc: 'Same as HR Manager — review applicants, add notes, view analytics.',
-    icon: '🔍',
-    activeBg: 'rgba(120,80,180,0.12)',
-    color: '#5b3d99',
-    border: 'rgba(120,80,180,0.30)',
-  },
-  {
-    value: 'recruiter',
-    label: 'Recruiter',
-    desc: 'View applicants and add notes only. No edit, delete, or management access.',
-    icon: '📋',
-    activeBg: 'rgba(200,164,65,0.14)',
-    color: '#8a6a16',
-    border: 'rgba(200,164,65,0.40)',
-  },
-]
+    {
+      value: 'admin',
+      label: 'Administrator',
+      desc: 'Full access to everything — users, positions, analytics, all applicant actions.',
+      icon: '👑',
+      activeBg: 'rgba(15,61,46,0.12)',
+      color: '#0f3d2e',
+      border: 'rgba(15,61,46,0.30)',
+    },
+    {
+      value: 'hr_manager',
+      label: 'HR Manager',
+      desc: 'Manage applicants, change status, view analytics, and manage job positions.',
+      icon: '🏢',
+      activeBg: 'rgba(74,127,191,0.14)',
+      color: '#2d5f8a',
+      border: 'rgba(74,127,191,0.35)',
+    },
+    {
+      value: 'hr_supervisor',
+      label: 'HR Supervisor',
+      desc: 'Review applicants, add notes, view analytics, and manage job positions.',
+      icon: '🔍',
+      activeBg: 'rgba(120,80,180,0.12)',
+      color: '#5b3d99',
+      border: 'rgba(120,80,180,0.30)',
+    },
+    {
+      value: 'recruiter',
+      label: 'Recruiter',
+      desc: 'View applicants and add notes only. No edit, delete, or management access.',
+      icon: '📋',
+      activeBg: 'rgba(200,164,65,0.14)',
+      color: '#8a6a16',
+      border: 'rgba(200,164,65,0.40)',
+    },
+  ]
 
 export const ROLE_MAP = Object.fromEntries(ROLE_OPTIONS.map(r => [r.value, r]))
 
@@ -118,7 +118,6 @@ export const CIVIL_STATUS_OPTIONS = [
   { value: 'Widowed', label: 'Widowed / Widower' },
   { value: 'Legally Separated', label: 'Legally Separated' },
   { value: 'Annulled', label: 'Annulled' },
-  { value: 'Divorced', label: 'Divorced (foreign national)' },
 ]
 
 // ============================================================================

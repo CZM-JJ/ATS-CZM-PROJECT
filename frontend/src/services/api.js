@@ -18,32 +18,37 @@ export const authAPI = {
     )
   },
 
-  logout: async (token) => {
-    if (!token) return
-    await fetch(`${apiBase}/api/logout`, {
+  logout: async () => {
+    await requestJson(`${apiBase}/api/logout`, {
       method: 'POST',
       credentials: 'include',
-      headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {})
   },
 
-  getCurrentUser: async (token) => {
-    return requestJson(
-      `${apiBase}/api/me`,
-      {
-        credentials: 'include',
-        headers: buildHeaders({ token }),
-      },
-      'Failed to fetch user'
-    )
+  getCurrentUser: async () => {
+    try {
+      return await requestJson(
+        `${apiBase}/api/me`,
+        {
+          credentials: 'include',
+          headers: buildHeaders(),
+        },
+        'Failed to fetch user'
+      )
+    } catch (err) {
+      if (err.message.includes('401') || err.message === 'Unauthorized') {
+        return null
+      }
+      throw err
+    }
   },
 
-  getPermissions: async (token) => {
+  getPermissions: async () => {
     return requestJson(
       `${apiBase}/api/settings/permissions`,
       {
         credentials: 'include',
-        headers: buildHeaders({ token }),
+        headers: buildHeaders(),
       },
       'Failed to fetch permissions'
     )
@@ -72,6 +77,22 @@ export const authAPI = {
         body: JSON.stringify({ token, email, password, password_confirmation }),
       },
       'Failed to reset password'
+    )
+  },
+}
+
+// ============================================================================
+// COMPANIES
+// ============================================================================
+export const companyAPI = {
+  getAll: async (token) => {
+    return requestJson(
+      `${apiBase}/api/companies`,
+      {
+        credentials: 'include',
+        headers: buildHeaders({ token }),
+      },
+      'Failed to fetch companies'
     )
   },
 }
@@ -275,9 +296,17 @@ export const positionAPI = {
     )
   },
 
-  getPaginated: async (token, page = 1) => {
+  getPaginated: async (token, params = {}) => {
+    const query = new URLSearchParams({
+      page: String(params.page ?? 1),
+      per_page: String(params.per_page ?? 20),
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.sort ? { sort: params.sort } : {}),
+      ...(params.direction ? { direction: params.direction } : {}),
+    }).toString()
     return requestJson(
-      `${apiBase}/api/positions/admin?page=${page}&per_page=20`,
+      `${apiBase}/api/positions/admin?${query}`,
       {
         headers: buildHeaders({ token }),
       },
@@ -501,3 +530,4 @@ export const analyticsAPI = {
     )
   },
 }
+

@@ -25,7 +25,7 @@ const AccessDenied = () => (
 )
 
 export default function ProtectedRoute({ children, roles, permission }) {
-  const { token, user, isLoading } = useAuth()
+  const { user, isLoading } = useAuth()
   const roleData = useRole()
 
   if (isLoading) {
@@ -39,7 +39,7 @@ export default function ProtectedRoute({ children, roles, permission }) {
     )
   }
 
-  if (!token) return <Navigate to="/admin/login" replace />
+  if (!user) return <Navigate to="/admin/login" replace />
 
   // Dynamic permission check (reads from DB-backed permissions)
   if (permission && user && !roleData[permission]) return <AccessDenied />

@@ -5,7 +5,7 @@ import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
 import ApplicantTimeline from '../components/ApplicantTimeline'
 import Toast from '../components/Toast'
-import { applicantAPI, noteAPI, positionAPI } from '../services/api'
+import { applicantAPI, noteAPI, positionAPI, userAPI } from '../services/api'
 import { STATUS_OPTIONS, PIPELINE_STATUS_OPTIONS, TERMINAL_STATUS_OPTIONS, SHORT_STATUS, AGE_RANGE_BOUNDS } from '../utils/constants'
 import { formatStatus, formatText, toName, timeAgo, formatDate, formatDateTime, formatCurrency, safeValue } from '../utils/helpers'
 
@@ -46,12 +46,14 @@ function AdminApplicantsPage() {
   const [searchTerm, setSearchTerm]       = useState(() => getParam('search', ''))
   const [statusFilter, setStatusFilter]   = useState(() => getParam('status', ''))
   const [positionFilter, setPositionFilter] = useState(() => getParam('position', ''))
+  const [updatedByFilter, setUpdatedByFilter] = useState(() => getParam('updated_by', ''))
   const [startDate, setStartDate]         = useState(() => getParam('start_date', ''))
   const [endDate, setEndDate]             = useState(() => getParam('end_date', ''))
   const [page, setPage]                   = useState(() => parseInt(getParam('page', '1'), 10) || 1)
   const [lastPage, setLastPage]           = useState(1)
   const [total, setTotal]                 = useState(0)
   const [positions, setPositions]         = useState([])
+  const [users, setUsers]                     = useState([])
   const [sort, setSort]                   = useState(() => getParam('sort', 'status'))
   const [direction, setDirection]         = useState(() => getParam('direction', 'asc'))
   const [viewMode, setViewMode]           = useState(() => getParam('view', 'active'))
@@ -106,7 +108,7 @@ function AdminApplicantsPage() {
   const selectedAgeRange = AGE_RANGE_BOUNDS[ageRangeFilter] || { ageMin: undefined, ageMax: undefined }
 
   const advancedFilterCount = [genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, ageRangeFilter].filter(Boolean).length
-  const activeFilterCount = [searchTerm, statusFilter, positionFilter, startDate, endDate].filter(Boolean).length + advancedFilterCount
+  const activeFilterCount = [searchTerm, statusFilter, positionFilter, updatedByFilter, startDate, endDate].filter(Boolean).length + advancedFilterCount
 
   const handleSort = (field) => {
     if (sort === field) {
@@ -223,12 +225,12 @@ function AdminApplicantsPage() {
     setOpenDropdownId(null)
     setUpdatingId(applicantId)
     try {
-      await applicantAPI.update(token, applicantId, { status: newStatus })
+      const updatedApplicant = await applicantAPI.update(token, applicantId, { status: newStatus })
       setApplicants((prev) =>
-        prev.map((a) => (a.id === applicantId ? { ...a, status: newStatus } : a))
+        prev.map((a) => (a.id === applicantId ? updatedApplicant : a))
       )
-      setSuccess('Status updated. Reloading page...')
-      setTimeout(() => window.location.reload(), 1500)
+      setSuccess('Status updated successfully.')
+      setTimeout(() => setSuccess(null), 3000)
     } catch {
       setError('Failed to update status.')
     } finally {
@@ -461,6 +463,7 @@ function AdminApplicantsPage() {
     setPositionFilter('')
     setStartDate('')
     setEndDate('')
+    setUpdatedByFilter('')
     setGenderFilter('')
     setEducationFilter('')
     setVacancyFilter('')
@@ -476,7 +479,11 @@ function AdminApplicantsPage() {
   useEffect(() => {
     if (!token) return
     loadPositions(token)
+    userAPI.getAll(token).then(payload => {
+      setUsers(Array.isArray(payload) ? payload : (payload.data || []))
+    }).catch(() => {})
   }, [token])
+
 
   // Sync URL params when filters change
   useEffect(() => {
@@ -485,6 +492,7 @@ function AdminApplicantsPage() {
     if (searchTerm) params.set('search', searchTerm)
     if (statusFilter) params.set('status', statusFilter)
     if (positionFilter) params.set('position', positionFilter)
+    if (updatedByFilter) params.set('updated_by', updatedByFilter)
     if (startDate) params.set('start_date', startDate)
     if (endDate) params.set('end_date', endDate)
     if (page > 1) params.set('page', String(page))
@@ -523,15 +531,16 @@ function AdminApplicantsPage() {
     if (!token) return
     const timer = setTimeout(() => {
       loadApplicants(token, {
-        search: searchTerm || undefined,
-        status: statusFilter || undefined,
-        position: positionFilter || undefined,
+        search: searchTerm.trim() || undefined,
+        status: statusFilter.trim() || undefined,
+        position: positionFilter.trim() || undefined,
+        updated_by: updatedByFilter.trim() || undefined,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
-        gender: genderFilter || undefined,
-        education: educationFilter || undefined,
-        vacancy_source: vacancyFilter || undefined,
-        location: locationFilter || undefined,
+        gender: genderFilter.trim() || undefined,
+        education: educationFilter.trim() || undefined,
+        vacancy_source: vacancyFilter.trim() || undefined,
+        location: locationFilter.trim() || undefined,
         salary_min: salaryMin || undefined,
         salary_max: salaryMax || undefined,
         experience_min: experienceMin || undefined,
@@ -546,7 +555,7 @@ function AdminApplicantsPage() {
       })
     }, 300)
     return () => clearTimeout(timer)
-  }, [token, searchTerm, statusFilter, positionFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, ageRangeFilter, selectedAgeRange.ageMin, selectedAgeRange.ageMax, viewMode, sort, direction, page, perPage])
+  }, [token, searchTerm, statusFilter, positionFilter, updatedByFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, ageRangeFilter, selectedAgeRange.ageMin, selectedAgeRange.ageMax, viewMode, sort, direction, page, perPage])
 
   const getGreeting = () => {
     const h = new Date().getHours()
@@ -625,20 +634,20 @@ function AdminApplicantsPage() {
           {error ? <div className="admin-alert error">{error}</div> : null}
         </div>
 
-        <div className="admin-table-filters">
+        <div className="admin-table-filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
           <label style={{ flex: '2 1 200px' }}>
-            <span>Search</span>
+            <span className="filter-label-text">Search</span>
             <input
-              className="input input-bordered"
+              className="input input-bordered input-sm"
               type="search"
-              placeholder="Name, email, phone, position, address"
+              placeholder="Search applicants..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </label>
           <label>
-            <span>Status</span>
-            <select className="select select-bordered" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <span className="filter-label-text">Status</span>
+            <select className="select select-bordered select-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All statuses</option>
               <optgroup label="Pipeline">
                 {PIPELINE_STATUS_OPTIONS.map((o) => <option key={o} value={o}>{formatStatus(o)}</option>)}
@@ -649,20 +658,29 @@ function AdminApplicantsPage() {
             </select>
           </label>
           <label>
-            <span>Position</span>
-            <select className="select select-bordered" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)}>
+            <span className="filter-label-text">Position</span>
+            <select className="select select-bordered select-sm" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)}>
               <option value="">All positions</option>
               {positions.map((p) => <option key={p.id} value={p.title}>{p.title}</option>)}
             </select>
           </label>
           <label>
-            <span>From</span>
-            <input className="input input-bordered" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <span className="filter-label-text">Updated By</span>
+            <select className="select select-bordered select-sm" value={updatedByFilter} onChange={(e) => setUpdatedByFilter(e.target.value)}>
+              <option value="">All users</option>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
           </label>
-          <label>
-            <span>To</span>
-            <input className="input input-bordered" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </label>
+          <div className="filter-date-group" style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+            <label>
+              <span className="filter-label-text">From</span>
+              <input className="input input-bordered input-sm" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </label>
+            <label>
+              <span className="filter-label-text">To</span>
+              <input className="input input-bordered input-sm" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </label>
+          </div>
           <button
             type="button"
             className={`adv-filter-toggle ${showAdvanced ? 'active' : ''}`}
@@ -862,6 +880,11 @@ function AdminApplicantsPage() {
                   </button>
                 </th>
                 <th>
+                  <button type="button" className="admin-th-sort" onClick={() => handleSort('updated_by')}>
+                    Updated By {sort === 'updated_by' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
+                  </button>
+                </th>
+                <th>
                   <button type="button" className="admin-th-sort" onClick={() => handleSort('created_at')}>
                     Submitted {sort === 'created_at' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
                   </button>
@@ -942,6 +965,9 @@ function AdminApplicantsPage() {
                     <td className="col-age">{applicant.age ?? '—'}</td>
                     <td className="col-experience">{applicant.total_work_experience_years != null ? `${applicant.total_work_experience_years} yr` : '—'}</td>
                     <td className="col-salary">{formatCurrency(applicant.expected_salary)}</td>
+                    <td title={applicant.updated_by_name ? `${applicant.updated_by_name} (updated ${new Date(applicant.updated_at).toLocaleString()})` : 'No updates'}>
+                      {applicant.updated_by_name || '—'}
+                    </td>
                     <td title={new Date(applicant.created_at).toLocaleString()}>{timeAgo(applicant.created_at)}</td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <div className="tbl-action-group">

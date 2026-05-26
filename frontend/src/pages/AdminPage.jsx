@@ -31,6 +31,7 @@ function AdminPage() {
   const [resumeBlobUrl, setResumeBlobUrl] = useState(null)
   const [resumeLoading, setResumeLoading] = useState(false)
   const [resumeError, setResumeError]     = useState(null)
+  const [statusDraft, setStatusDraft]     = useState('')
 
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting]         = useState(false)
@@ -128,6 +129,13 @@ function AdminPage() {
     [searchParams]
   )
 
+  const selectedApplicant = useMemo(
+    () => applicants.find((item) => item.id === selectedId),
+    [applicants, selectedId]
+  )
+
+  const isStatusDirty = !!selectedApplicant && statusDraft !== selectedApplicant.status
+
   useEffect(() => {
     if (!token) {
       return
@@ -181,6 +189,18 @@ function AdminPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, selectedId, viewMode])
+
+  useEffect(() => {
+    setStatusDraft(selectedApplicant?.status || '')
+  }, [selectedApplicant?.status, selectedId])
+
+  useEffect(() => {
+    return () => {
+      if (resumeBlobUrl) {
+        URL.revokeObjectURL(resumeBlobUrl)
+      }
+    }
+  }, [resumeBlobUrl])
 
   useEffect(() => {
     if (!adminMessage) return
@@ -345,8 +365,8 @@ function AdminPage() {
       setApplicants((previous) =>
         previous.map((item) => (item.id === updated.id ? updated : item))
       )
-      setAdminMessage('Status updated. Reloading page...')
-      setTimeout(() => window.location.reload(), 1500)
+      setStatusDraft(updated.status)
+      setAdminMessage(`Status updated to ${formatStatus(updated.status)}.`)
     } catch {
       setAdminError('Unable to update status. Please try again.')
     } finally {
@@ -593,11 +613,6 @@ function AdminPage() {
     win.document.close()
   }
 
-  const selectedApplicant = useMemo(
-    () => applicants.find((item) => item.id === selectedId),
-    [applicants, selectedId]
-  )
-
   useEffect(() => {
     if (viewMode !== 'active') return
     if (!selectedApplicant) return
@@ -654,7 +669,7 @@ function AdminPage() {
               {viewMode === 'archived' ? 'Archive View' : 'Active View'}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <div className="admin-card-head-actions">
             <div className="admin-mode-switch" role="tablist" aria-label="Pipeline mode">
               <button
                 type="button"
@@ -841,15 +856,11 @@ function AdminPage() {
                         <label className="admin-status-label">Update status</label>
                         <select
                           className="select select-bordered"
-                          value={selectedApplicant.status}
+                          value={statusDraft || selectedApplicant.status}
                           disabled={viewMode === 'archived'}
                           onChange={(event) => {
                             const value = event.target.value
-                            setApplicants((previous) =>
-                              previous.map((item) =>
-                                item.id === selectedApplicant.id ? { ...item, status: value } : item
-                              )
-                            )
+                            setStatusDraft(value)
                           }}
                         >
                           <optgroup label="Pipeline">
@@ -867,17 +878,18 @@ function AdminPage() {
                             ))}
                           </optgroup>
                         </select>
+                        {isStatusDirty ? <span className="admin-status-dirty">Unsaved</span> : null}
                         <button
                           type="button"
-                          className="btn btn-sm apply-submit"
-                          disabled={statusSaving || viewMode === 'archived'}
-                          onClick={() => handleStatusSave(selectedApplicant.id, selectedApplicant.status)}
+                          className={`btn btn-sm apply-submit ${isStatusDirty ? 'apply-submit-dirty' : ''}`}
+                          disabled={statusSaving || viewMode === 'archived' || !isStatusDirty}
+                          onClick={() => handleStatusSave(selectedApplicant.id, statusDraft || selectedApplicant.status)}
                         >
                           {statusSaving ? (<><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Saving…</>) : 'Save'}
                         </button>
                       </div>
                     )}
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <div className="admin-detail-action-row">
                       <button
                         type="button"
                         className="admin-detail-action-btn admin-detail-action-btn-download"

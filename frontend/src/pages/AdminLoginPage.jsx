@@ -4,13 +4,13 @@ import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
 
 export default function AdminLoginPage() {
-  const { token, login } = useAuth()
+  const { user, login } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  if (token) return <Navigate to="/admin" replace />
+  if (user) return <Navigate to="/admin" replace />
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -22,8 +22,8 @@ export default function AdminLoginPage() {
     setError(null)
     setLoading(true)
     try {
-      const { token: accessToken } = await authAPI.login(form)
-      login(accessToken)
+      await authAPI.login(form)
+      login(form)
       navigate('/admin', { replace: true })
     } catch (err) {
       const payload = err?.message ? { message: err.message } : {}
@@ -144,3 +144,4 @@ export default function AdminLoginPage() {
     </div>
   )
 }
+

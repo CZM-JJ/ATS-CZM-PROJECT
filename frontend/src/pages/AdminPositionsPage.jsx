@@ -2,39 +2,52 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AdminLayout from '../components/AdminLayout'
 import Toast from '../components/Toast'
-import { positionAPI } from '../services/api'
+import { positionAPI, companyAPI } from '../services/api'
 
 
 const emptyForm = {
   title: '',
-  description: '',
   location: '',
   salary_min: '',
   salary_max: '',
+  company_id: '',
   is_active: true,
 }
 
 
 function AdminPositionsPage() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { token, user } = useAuth()
 
-  const [positions, setPositions]   = useState([])
-  const [loading, setLoading]       = useState(false)
-  const [error, setError]           = useState(null)
-  const [success, setSuccess]       = useState(null)
-  const [toastType, setToastType]   = useState('success')
-  const [page, setPage]             = useState(1)
-  const [lastPage, setLastPage]     = useState(1)
-  const [total, setTotal]           = useState(0)
+  const getParam = (key, defaultValue = '') => searchParams.get(key) ?? defaultValue
+
+  const [positions, setPositions]       = useState([])
+  const [companies, setCompanies]       = useState([])
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState(null)
+  const [success, setSuccess]           = useState(null)
+  const [toastType, setToastType]       = useState('success')
+
+  // Filter states
+  const [searchTerm, setSearchTerm]     = useState(() => getParam('search', ''))
+  const [statusFilter, setStatusFilter] = useState(() => getParam('status', ''))
+  const [page, setPage]                 = useState(() => parseInt(getParam('page', '1'), 10) || 1)
+  const [perPage, setPerPage]           = useState(() => parseInt(getParam('per_page', '20'), 10) || 20)
+  const [lastPage, setLastPage]         = useState(1)
+  const [total, setTotal]               = useState(0)
+  const [sort, setSort]                 = useState(() => getParam('sort', 'created_at'))
+  const [direction, setDirection]       = useState(() => getParam('direction', 'desc'))
 
   // Modal state
-  const [modalOpen, setModalOpen]   = useState(false)
-  const [editing, setEditing]       = useState(null) // null = adding new
-  const [form, setForm]             = useState(emptyForm)
-  const [saving, setSaving]         = useState(false)
-  const [formError, setFormError]   = useState(null)
+  const [modalOpen, setModalOpen]       = useState(false)
+  const [editing, setEditing]           = useState(null) // null = adding new
+  const [form, setForm]                 = useState(emptyForm)
+  const [saving, setSaving]             = useState(false)
+  const [formError, setFormError]       = useState(null)
 
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -56,6 +69,16 @@ function AdminPositionsPage() {
     }
   }
   const clearSelection = () => setSelectedIds([])
+
+  const handleSort = (field) => {
+    if (sort === field) {
+      setDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSort(field)
+      setDirection('asc')
+    }
+    setPage(1)
+  }
 
   // Bulk delete
   const handleBulkDelete = async () => {
@@ -100,11 +123,11 @@ function AdminPositionsPage() {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [anyModalOpen, saving, deleting])
 
-  const loadPositions = async (p = 1) => {
+  const loadPositions = async (activeToken, params = {}) => {
     setLoading(true)
     setError(null)
     try {
-      const payload = await positionAPI.getPaginated(token, p)
+      const payload = await positionAPI.getPaginated(activeToken, params)
       setPositions(payload.data || [])
       setPage(payload.meta?.current_page ?? payload.current_page ?? 1)
       setLastPage(payload.meta?.last_page ?? payload.last_page ?? 1)
@@ -116,11 +139,46 @@ function AdminPositionsPage() {
     }
   }
 
+  const loadCompanies = async () => {
+    try {
+      const payload = await companyAPI.getAll(token)
+      setCompanies(payload)
+    } catch (e) {
+      console.error('Failed to load companies', e)
+    }
+  }
+
   useEffect(() => {
     if (!token) return
-    loadPositions(page)
+    const timer = setTimeout(() => {
+      loadPositions(token, {
+        search: searchTerm.trim() || undefined,
+        status: statusFilter.trim() || undefined,
+        sort,
+        direction,
+        page,
+        per_page: perPage,
+      })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [token, searchTerm, statusFilter, sort, direction, page, perPage])
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (searchTerm) params.set('search', searchTerm)
+    if (statusFilter) params.set('status', statusFilter)
+    if (page > 1) params.set('page', String(page))
+    if (perPage !== 20) params.set('per_page', String(perPage))
+    if (sort) params.set('sort', sort)
+    if (direction) params.set('direction', direction)
+    setSearchParams(params, { replace: true })
+  }, [searchTerm, statusFilter, page, perPage, sort, direction, setSearchParams])
+
+  useEffect(() => {
+    if (!token) return
+    loadCompanies()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page])
+  }, [token])
 
   const openAdd = () => {
     setEditing(null)
@@ -133,10 +191,10 @@ function AdminPositionsPage() {
     setEditing(position)
     setForm({
       title: position.title ?? '',
-      description: position.description ?? '',
       location: position.location ?? '',
       salary_min: position.salary_min ?? '',
       salary_max: position.salary_max ?? '',
+      company_id: position.company_id ?? '',
       is_active: position.is_active ?? true,
     })
     setFormError(null)
@@ -163,10 +221,10 @@ function AdminPositionsPage() {
     try {
       const body = {
         title: form.title.trim(),
-        description: form.description.trim() || null,
         location: form.location.trim(),
         salary_min: form.salary_min !== '' ? Number(form.salary_min) : null,
         salary_max: form.salary_max !== '' ? Number(form.salary_max) : null,
+        company_id: form.company_id,
         is_active: form.is_active,
       }
       const saved = editing
@@ -237,6 +295,9 @@ function AdminPositionsPage() {
     return 'Good evening'
   }
 
+  const firstItem = total === 0 ? 0 : (page - 1) * perPage + 1
+  const lastItem  = Math.min(page * perPage, total)
+
   return (
     <AdminLayout pageTitle="Positions">
 
@@ -270,7 +331,39 @@ function AdminPositionsPage() {
           {error ? <div className="admin-alert error">{error}</div> : null}
         </div>
 
-        <div className="admin-table-wrap" style={{ width: '100%', padding: 0, margin: 0 }}>
+        <div className="admin-table-filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+          <label style={{ flex: '2 1 200px' }}>
+            <span className="filter-label-text">Search</span>
+            <input
+              className="input input-bordered input-sm"
+              type="search"
+              placeholder="Search positions or companies..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="filter-label-text">Status</span>
+            <select className="select select-bordered select-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </label>
+          <div className="filter-date-group" style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+            <button
+              type="button"
+              className={`adv-filter-toggle ${searchTerm || statusFilter ? 'active' : ''}`}
+              onClick={() => {}}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+              Filters{searchTerm || statusFilter ? ` (2)` : ''}
+              <span className={`adv-filter-chevron ${searchTerm || statusFilter ? 'open' : ''}`}>▾</span>
+            </button>
+          </div>
+        </div>
           <table className="admin-table" style={{ width: '100%' }}>
             <thead>
               <tr>
@@ -284,10 +377,19 @@ function AdminPositionsPage() {
                     title="Select all on this page"
                   />
                 </th>
-                <th>Title</th>
+                <th>
+                  <button type="button" className="admin-th-sort" onClick={() => handleSort('title')}>
+                    Title {sort === 'title' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
+                  </button>
+                </th>
+                <th className="pos-col-company">Company</th>
                 <th className="pos-col-location">Location</th>
                 <th className="pos-col-salary">Salary Range</th>
-                <th>Status</th>
+                <th>
+                  <button type="button" className="admin-th-sort" onClick={() => handleSort('status')}>
+                    Status {sort === 'status' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
+                  </button>
+                </th>
                 <th style={{ width: '110px' }}>Actions</th>
               </tr>
             </thead>
@@ -295,7 +397,7 @@ function AdminPositionsPage() {
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={`skel-${i}`} style={{ opacity: 1 - i * 0.12 }}>
-                    {[140, 100, 120, 60, 120].map((w, j) => (
+                    {[36, 140, 120, 100, 120, 60, 110].map((w, j) => (
                       <td key={j}>
                         <div style={{
                           height: '14px', borderRadius: '6px', width: `${w}px`,
@@ -322,12 +424,8 @@ function AdminPositionsPage() {
                     </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#0f2c20' }}>{pos.title}</div>
-                      {pos.description && (
-                        <div style={{ fontSize: '0.78rem', color: '#6b7870', marginTop: '2px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {pos.description}
-                        </div>
-                      )}
                     </td>
+                    <td className="pos-col-company">{pos.company?.name || '—'}</td>
                     <td className="pos-col-location">{pos.location}</td>
                     <td className="pos-col-salary">{formatSalary(pos.salary_min, pos.salary_max)}</td>
                     <td>
@@ -381,18 +479,6 @@ function AdminPositionsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {lastPage > 1 && (
-          <div className="admin-table-footer admin-pagination-bar">
-            <span className="admin-pagination-info">{total} total</span>
-            <div className="admin-pagination-controls">
-              <button className="admin-pg-btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ Prev</button>
-              <span className="admin-pagination-current">Page {page} of {lastPage}</span>
-              <button className="admin-pg-btn" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>Next ›</button>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* ── Add / Edit Modal ── */}
       {modalOpen && createPortal(
@@ -439,6 +525,21 @@ function AdminPositionsPage() {
                     />
                   </div>
                   <div className="pos-field">
+                    <label className="pos-label">Company <span className="pos-req">*</span></label>
+                    <select
+                      className="pos-input"
+                      name="company_id"
+                      value={form.company_id}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select company</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="pos-field">
                     <label className="pos-label">Location <span className="pos-req">*</span></label>
                     <input
                       className="pos-input"
@@ -449,18 +550,6 @@ function AdminPositionsPage() {
                       placeholder="e.g. Manila, Philippines"
                     />
                   </div>
-                </div>
-
-                <div className="pos-field">
-                  <label className="pos-label">Description</label>
-                  <textarea
-                    className="pos-input"
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    placeholder="Describe the role and responsibilities..."
-                    rows={4}
-                  />
                 </div>
 
                 <div className="pos-field-row">

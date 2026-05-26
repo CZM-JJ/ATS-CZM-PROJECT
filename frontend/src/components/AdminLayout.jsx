@@ -63,7 +63,7 @@ export default function AdminLayout({ children, pageTitle }) {
     const map = new Map()
     for (const n of (notifPayload.unread || [])) map.set(n.id, n)
     for (const n of (notifPayload.recent || [])) map.set(n.id, n)
-    return Array.from(map.values())
+    return Array.from(map.values()).slice(0, 10)
   }, [notifPayload])
 
   const formatNotifText = (n) => {
@@ -71,7 +71,7 @@ export default function AdminLayout({ children, pageTitle }) {
     if (data.kind === 'applicant_submitted') {
       return `New application: ${data.name || 'Applicant'} · ${data.position || '—'}`
     }
-    return 'New notification'
+    return data.message || n?.message || 'New notification'
   }
 
   const formatNotifTime = (iso) => {
