@@ -149,7 +149,7 @@ function AdminPositionsPage() {
   }
 
   useEffect(() => {
-    if (!token) return
+    if (!user) return
     const timer = setTimeout(() => {
       loadPositions(token, {
         search: searchTerm.trim() || undefined,
@@ -161,7 +161,7 @@ function AdminPositionsPage() {
       })
     }, 300)
     return () => clearTimeout(timer)
-  }, [token, searchTerm, statusFilter, sort, direction, page, perPage])
+  }, [user, searchTerm, statusFilter, sort, direction, page, perPage])
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -175,10 +175,10 @@ function AdminPositionsPage() {
   }, [searchTerm, statusFilter, page, perPage, sort, direction, setSearchParams])
 
   useEffect(() => {
-    if (!token) return
+    if (!user) return
     loadCompanies()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [user])
 
   const openAdd = () => {
     setEditing(null)

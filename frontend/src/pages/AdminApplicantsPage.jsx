@@ -32,7 +32,7 @@ const getAvatarColor = (firstName = '', lastName = '') => {
 function AdminApplicantsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { token, user } = useAuth()
+  const { token, user, isLoading } = useAuth()
   const { canEdit, canDelete } = useRole()
 
   // Initialize filters from URL params
@@ -124,8 +124,8 @@ function AdminApplicantsPage() {
     try {
       const payload = await positionAPI.getAll(activeToken)
       setPositions(Array.isArray(payload) ? payload : (payload.data || []))
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error('loadPositions failed', err)
     }
   }
 
@@ -141,8 +141,9 @@ function AdminApplicantsPage() {
       setPage(payload.meta?.current_page ?? payload.current_page ?? 1)
       setLastPage(payload.meta?.last_page ?? payload.last_page ?? 1)
       setTotal(payload.meta?.total ?? payload.total ?? 0)
-    } catch {
-      setError('Unable to load applicants.')
+    } catch (err) {
+      console.error('loadApplicants failed', err)
+      setError(err?.message || 'Unable to load applicants.')
     } finally {
       setLoading(false)
     }
@@ -477,12 +478,14 @@ function AdminApplicantsPage() {
   }
 
   useEffect(() => {
-    if (!token) return
-    loadPositions(token)
-    userAPI.getAll(token).then(payload => {
+    if (!user) return
+    loadPositions()
+    userAPI.getAll().then(payload => {
       setUsers(Array.isArray(payload) ? payload : (payload.data || []))
-    }).catch(() => {})
-  }, [token])
+    }).catch((err) => {
+      console.error('Failed to load users', err)
+    })
+  }, [user])
 
 
   // Sync URL params when filters change
@@ -528,7 +531,7 @@ function AdminApplicantsPage() {
   }, [searchTerm, statusFilter, positionFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, ageRangeFilter, perPage, viewMode])
 
   useEffect(() => {
-    if (!token) return
+    if (!user) return
     const timer = setTimeout(() => {
       loadApplicants(token, {
         search: searchTerm.trim() || undefined,
@@ -555,7 +558,7 @@ function AdminApplicantsPage() {
       })
     }, 300)
     return () => clearTimeout(timer)
-  }, [token, searchTerm, statusFilter, positionFilter, updatedByFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, ageRangeFilter, selectedAgeRange.ageMin, selectedAgeRange.ageMax, viewMode, sort, direction, page, perPage])
+  }, [user, searchTerm, statusFilter, positionFilter, updatedByFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, ageRangeFilter, selectedAgeRange.ageMin, selectedAgeRange.ageMax, viewMode, sort, direction, page, perPage])
 
   const getGreeting = () => {
     const h = new Date().getHours()

@@ -6,7 +6,7 @@ import { notificationAPI } from '../services/api'
 import { ROLE_LABELS } from '../utils/constants'
 
 export default function AdminLayout({ children, pageTitle }) {
-  const { user, token, logout } = useAuth()
+  const { user, logout } = useAuth()
   const { isAdmin, canViewAnalytics, canManagePositions, canManageUsers } = useRole()
   const navigate = useNavigate()
 
@@ -39,11 +39,11 @@ export default function AdminLayout({ children, pageTitle }) {
   }, [])
 
   const fetchNotifications = async () => {
-    if (!token) return
+    if (!user) return
     setNotifLoading(true)
     setNotifError(null)
     try {
-      const payload = await notificationAPI.getAll(token)
+      const payload = await notificationAPI.getAll()
       setNotifPayload(payload)
     } catch {
       setNotifError('Unable to load notifications.')
@@ -53,10 +53,10 @@ export default function AdminLayout({ children, pageTitle }) {
   }
 
   useEffect(() => {
-    if (!token) return
+    if (!user) return
     fetchNotifications()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [user])
 
   const notifications = useMemo(() => {
     // Prefer unread first, then recent.
@@ -101,9 +101,8 @@ export default function AdminLayout({ children, pageTitle }) {
   }
 
   const markNotifRead = async (id) => {
-    if (!token) return
     try {
-      await notificationAPI.markRead(token, id)
+      await notificationAPI.markRead(id)
       setNotifPayload((prev) => ({
         ...prev,
         unread_count: Math.max(0, (prev.unread_count ?? 0) - 1),
@@ -116,9 +115,8 @@ export default function AdminLayout({ children, pageTitle }) {
   }
 
   const markAllRead = async () => {
-    if (!token) return
     try {
-      await notificationAPI.markAllRead(token)
+      await notificationAPI.markAllRead()
       setNotifPayload((prev) => ({
         ...prev,
         unread_count: 0,

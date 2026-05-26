@@ -64,9 +64,9 @@ export default function AdminUsersPage() {
     finally  { setLoading(false) }
   }
 
-  useEffect(() => { if (token) load() 
+  useEffect(() => { if (user) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [user])
 
   const openCreate = () => { setEditUser(null); setForm(emptyForm); setFormError(null); setShowPw(false); setModalOpen(true) }
   const openEdit   = (u) => { setEditUser(u); setForm({ name: u.name, email: u.email, password: '', role: u.role }); setFormError(null); setShowPw(false); setModalOpen(true) }

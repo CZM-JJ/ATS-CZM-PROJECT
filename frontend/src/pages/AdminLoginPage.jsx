@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { authAPI } from '../services/api'
 
 export default function AdminLoginPage() {
   const { user, login } = useAuth()
@@ -22,8 +21,7 @@ export default function AdminLoginPage() {
     setError(null)
     setLoading(true)
     try {
-      await authAPI.login(form)
-      login(form)
+      await login(form)
       navigate('/admin', { replace: true })
     } catch (err) {
       const payload = err?.message ? { message: err.message } : {}
@@ -122,7 +120,7 @@ export default function AdminLoginPage() {
             style={{
               width: '100%',
               padding: '12px',
-              backgroundColor: loading ? '#9ca3af' : '  #0f3d2e',
+              backgroundColor: loading ? '#9ca3af' : '#0f3d2e',
               color: '#fff',
               border: 'none',
               borderRadius: '6px',

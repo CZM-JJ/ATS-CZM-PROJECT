@@ -62,7 +62,7 @@ function buildPageButtons(current, last) {
 const emptyFilters = { action: '', entity: '', user_name: '', start_date: '', end_date: '' }
 
 export default function AdminAuditLogsPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   const [logs, setLogs]       = useState([])
   const [meta, setMeta]       = useState({ current_page: 1, last_page: 1, total: 0 })
@@ -74,6 +74,7 @@ export default function AdminAuditLogsPage() {
   const [error, setError]     = useState('')
 
   const load = useCallback(async (f, p, pp) => {
+    if (!user) return
     setLoading(true)
     setError('')
     try {

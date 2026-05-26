@@ -137,7 +137,7 @@ function AdminPage() {
   const isStatusDirty = !!selectedApplicant && statusDraft !== selectedApplicant.status
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       return
     }
 
@@ -153,7 +153,7 @@ function AdminPage() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [token, searchParams, viewMode, getParam])
+  }, [user, searchParams, viewMode, getParam])
 
   // Sync URL params when filters change
   useEffect(() => {
@@ -173,7 +173,7 @@ function AdminPage() {
   }, [searchParams, viewMode, setSearchParams, getParam])
 
   useEffect(() => {
-    if (!token || !selectedId || viewMode === 'archived') {
+    if (!user || !selectedId || viewMode === 'archived') {
       setNotes([])
       return
     }
@@ -188,7 +188,7 @@ function AdminPage() {
       setResumeBlobUrl(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, selectedId, viewMode])
+  }, [user, selectedId, viewMode])
 
   useEffect(() => {
     setStatusDraft(selectedApplicant?.status || '')

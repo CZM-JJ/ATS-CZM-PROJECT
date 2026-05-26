@@ -1,46 +1,16 @@
 import { apiBase } from '../utils/apiBase'
 
-const CSRF_COOKIE_URL = `${apiBase}/sanctum/csrf-cookie`
-
-const isUnsafeMethod = (method) => {
-  const m = (method || 'GET').toUpperCase()
-  return !['GET', 'HEAD', 'OPTIONS'].includes(m)
-}
-
-const getCookie = (name) => {
-  if (typeof document === 'undefined') return null
-  const match = document.cookie.match(
-    new RegExp(
-      `(?:^|; )${name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`
-    )
-  )
-  return match ? match[1] : null
-}
-
-const ensureCsrfCookie = async () => {
-  if (getCookie('XSRF-TOKEN')) return
-  await fetch(CSRF_COOKIE_URL, { method: 'GET', credentials: 'include' })
-}
-
 const withDefaultOptions = async (options = {}) => {
-  const merged = {
-    credentials: 'include',
+  const headers = {
+    'X-Requested-With': 'XMLHttpRequest',
+    'Accept': 'application/json',
+    ...(options.headers || {}),
+  }
+  
+  return {
     ...options,
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-      ...(options.headers || {}),
-    },
+    headers,
   }
-
-  if (isUnsafeMethod(merged.method)) {
-    await ensureCsrfCookie()
-    const xsrf = getCookie('XSRF-TOKEN')
-    if (xsrf) {
-      merged.headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrf)
-    }
-  }
-
-  return merged
 }
 
 export const requestJson = async (url, options = {}, errorMessage = 'Request failed') => {
@@ -56,7 +26,10 @@ export const requestJson = async (url, options = {}, errorMessage = 'Request fai
 
   if (!res.ok) {
     const serverMsg = data && data.message ? data.message : errorMessage
-    throw new Error(serverMsg)
+    const error = new Error(`${serverMsg}${res.status ? ` (${res.status} ${res.statusText})` : ''}`)
+    error.status = res.status
+    error.response = res
+    throw error
   }
 
   if (res.status === 204 || res.status === 205) return null
@@ -83,8 +56,9 @@ export const requestBlob = async (url, options = {}, errorMessage = 'Request fai
   return res.blob()
 }
 
-export const buildHeaders = ({ contentType } = {}) => {
+export const buildHeaders = ({ token, contentType } = {}) => {
   const headers = {}
+  if (token) headers.Authorization = `Bearer ${token}`
   if (contentType) headers['Content-Type'] = contentType
   return headers
 }

@@ -1,0 +1,13 @@
+vendor
+node_modules
+.git
+storage
+.env
+tests
+README.md
+.vscode
+/.github
+.idea
+npm-debug.log
+yarn-error.log
+/.venv

@@ -261,7 +261,7 @@ function AdminAnalyticsPage() {
   const [animateCharts, setAnimateCharts] = useState(false)
 
   const load = useCallback(async () => {
-    if (!token) return
+    if (!user) return
     setLoading(true)
     setAnimateCharts(false)
     setError(null)
@@ -275,7 +275,7 @@ function AdminAnalyticsPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, period])
+  }, [user, period])
 
   useEffect(() => { load() }, [load])
 

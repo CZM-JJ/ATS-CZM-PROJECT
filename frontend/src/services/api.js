@@ -18,37 +18,40 @@ export const authAPI = {
     )
   },
 
-  logout: async () => {
+  logout: async (token) => {
     await requestJson(`${apiBase}/api/logout`, {
       method: 'POST',
       credentials: 'include',
+      headers: buildHeaders({ token }),
     }).catch(() => {})
   },
 
-  getCurrentUser: async () => {
+  getCurrentUser: async (token) => {
     try {
       return await requestJson(
         `${apiBase}/api/me`,
         {
           credentials: 'include',
-          headers: buildHeaders(),
+          headers: buildHeaders({ token }),
         },
         'Failed to fetch user'
       )
     } catch (err) {
-      if (err.message.includes('401') || err.message === 'Unauthorized') {
+      const message = err?.message?.toLowerCase?.() || ''
+      const status = err?.status
+      if (status === 401 || message.includes('401') || message.includes('unauthenticated') || message.includes('unauthorized')) {
         return null
       }
       throw err
     }
   },
 
-  getPermissions: async () => {
+  getPermissions: async (token) => {
     return requestJson(
       `${apiBase}/api/settings/permissions`,
       {
         credentials: 'include',
-        headers: buildHeaders(),
+        headers: buildHeaders({ token }),
       },
       'Failed to fetch permissions'
     )
@@ -106,6 +109,7 @@ export const applicantAPI = {
     return requestJson(
       `${apiBase}/api/applicants?${query}`,
       {
+        credentials: 'include',
         headers: buildHeaders({ token }),
       },
       'Failed to fetch applicants'
@@ -116,6 +120,7 @@ export const applicantAPI = {
     return requestJson(
       `${apiBase}/api/applicants/${id}`,
       {
+        credentials: 'include',
         headers: buildHeaders({ token }),
       },
       'Failed to fetch applicant'
@@ -252,6 +257,7 @@ export const noteAPI = {
     return requestJson(
       `${apiBase}/api/applicants/${applicantId}/notes`,
       {
+        credentials: 'include',
         headers: buildHeaders({ token }),
       },
       'Failed to fetch notes'
@@ -290,6 +296,7 @@ export const positionAPI = {
     return requestJson(
       `${apiBase}/api/positions/all`,
       {
+        credentials: 'include',
         headers: buildHeaders({ token }),
       },
       'Failed to fetch positions'
@@ -308,6 +315,7 @@ export const positionAPI = {
     return requestJson(
       `${apiBase}/api/positions/admin?${query}`,
       {
+        credentials: 'include',
         headers: buildHeaders({ token }),
       },
       'Failed to fetch positions'

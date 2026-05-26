@@ -60,7 +60,7 @@ function ApplicantTimeline({ applicantId, token }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!applicantId || !token) return
+    if (!applicantId) return
 
     const loadTimeline = async () => {
       setLoading(true)
