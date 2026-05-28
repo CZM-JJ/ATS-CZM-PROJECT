@@ -26,7 +26,7 @@ return [
         '#^http://10\.\d+\.\d+\.\d+:517\d$#',
     ],
 
-    'allowed_headers' => ['Content-Type', 'X-Requested-With', 'Accept', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN'],
+    'allowed_headers' => ['Content-Type', 'X-Requested-With', 'Accept', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN', 'Authorization'],
 
     'exposed_headers' => [],
 

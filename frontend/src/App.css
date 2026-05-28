@@ -4608,6 +4608,11 @@ textarea {
   align-items: flex-end;
 }
 
+.admin-detail-action-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
 .admin-detail-action-btn {
   display: inline-flex;
   align-items: center;

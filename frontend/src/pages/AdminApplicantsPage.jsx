@@ -478,14 +478,14 @@ function AdminApplicantsPage() {
   }
 
   useEffect(() => {
-    if (!user) return
-    loadPositions()
-    userAPI.getAll().then(payload => {
+    if (!user || !token) return
+    loadPositions(token)
+    userAPI.getAll(token).then(payload => {
       setUsers(Array.isArray(payload) ? payload : (payload.data || []))
     }).catch((err) => {
       console.error('Failed to load users', err)
     })
-  }, [user])
+  }, [user, token])
 
 
   // Sync URL params when filters change

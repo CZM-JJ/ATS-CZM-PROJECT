@@ -6,7 +6,7 @@ import { notificationAPI } from '../services/api'
 import { ROLE_LABELS } from '../utils/constants'
 
 export default function AdminLayout({ children, pageTitle }) {
-  const { user, logout } = useAuth()
+  const { user, token, logout } = useAuth()
   const { isAdmin, canViewAnalytics, canManagePositions, canManageUsers } = useRole()
   const navigate = useNavigate()
 
@@ -39,11 +39,11 @@ export default function AdminLayout({ children, pageTitle }) {
   }, [])
 
   const fetchNotifications = async () => {
-    if (!user) return
+    if (!user || !token) return
     setNotifLoading(true)
     setNotifError(null)
     try {
-      const payload = await notificationAPI.getAll()
+      const payload = await notificationAPI.getAll(token)
       setNotifPayload(payload)
     } catch {
       setNotifError('Unable to load notifications.')
@@ -102,7 +102,7 @@ export default function AdminLayout({ children, pageTitle }) {
 
   const markNotifRead = async (id) => {
     try {
-      await notificationAPI.markRead(id)
+      await notificationAPI.markRead(token, id)
       setNotifPayload((prev) => ({
         ...prev,
         unread_count: Math.max(0, (prev.unread_count ?? 0) - 1),
@@ -116,7 +116,7 @@ export default function AdminLayout({ children, pageTitle }) {
 
   const markAllRead = async () => {
     try {
-      await notificationAPI.markAllRead()
+      await notificationAPI.markAllRead(token)
       setNotifPayload((prev) => ({
         ...prev,
         unread_count: 0,

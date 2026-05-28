@@ -162,7 +162,8 @@ export const extractXhrError = (xhr) => {
       if (firstKey) return payload.errors[firstKey][0]
     }
   } catch {
-    return null
+    // If we can't parse JSON, try to return status text
+    if (xhr.statusText) return xhr.statusText
   }
   return 'Unable to complete the request. Please try again.'
 }

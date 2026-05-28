@@ -352,6 +352,18 @@ function AdminPositionsPage() {
               <option value="rejected">Rejected</option>
             </select>
           </label>
+          <label>
+            <span className="filter-label-text">Rows</span>
+            <select
+              className="select select-bordered select-sm"
+              value={perPage}
+              onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </label>
           <div className="filter-date-group" style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
             <button
               type="button"
@@ -477,6 +489,31 @@ function AdminPositionsPage() {
               )}
             </tbody>
           </table>
+
+          <div className="admin-table-footer admin-pagination-bar">
+            <span className="admin-pagination-info">{total > 0 ? `${firstItem}–${lastItem} of ${total}` : '0 results'}</span>
+            <div className="admin-pagination-controls">
+              <button
+                type="button"
+                className="admin-pg-btn"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                ‹ Prev
+              </button>
+              <span className="admin-pagination-current">
+                Page {page} of {lastPage}
+              </span>
+              <button
+                type="button"
+                className="admin-pg-btn"
+                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                disabled={page >= lastPage}
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
         </div>
 
 

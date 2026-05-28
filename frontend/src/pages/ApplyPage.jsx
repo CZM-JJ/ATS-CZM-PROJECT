@@ -313,7 +313,8 @@ function ApplyPage() {
       })
 
       if (xhr.status < 200 || xhr.status >= 300) {
-        setError(extractXhrError(xhr))
+        const errorMsg = extractXhrError(xhr) || `Server error (${xhr.status})`
+        setError(errorMsg)
         return
       }
 
@@ -326,8 +327,8 @@ function ApplyPage() {
       setHoneypotWebsite('')
       setFormStartedAt(Date.now())
       setTermsAccepted(false)
-    } catch {
-      setError('Network error. Please try again in a moment.')
+    } catch (err) {
+      setError(err?.message || 'Network error. Please try again in a moment.')
     } finally {
       setSubmitting(false)
       setSubmitPhase(null)

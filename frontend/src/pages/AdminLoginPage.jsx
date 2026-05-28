@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
             style={{
               width: '100%',
               padding: '12px',
-              backgroundColor: loading ? '#9ca3af' : '#0f3d2e',
+              backgroundColor: loading ? '#9ca3af' : '  #0f3d2e',
               color: '#fff',
               border: 'none',
               borderRadius: '6px',

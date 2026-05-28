@@ -6,7 +6,6 @@ use App\Http\Resources\ApplicantResource;
 use App\Models\Applicant;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Notifications\ApplicantStatusUpdated;
 use App\Notifications\ApplicantSubmissionReceived;
 use App\Notifications\ApplicantSubmitted;
 use Illuminate\Http\JsonResponse;
@@ -88,12 +87,6 @@ class ApplicantController extends Controller
         if ($previousStatus !== $applicant->status) {
             AuditLog::log('status_change', 'applicant', $applicant->id, $fullName,
                 "Status changed: {$previousStatus} → {$applicant->status} for '{$fullName}'");
-
-            // Send in-app notification to all admin/recruiter users
-            $recipients = User::query()->get();
-            if ($recipients->isNotEmpty()) {
-                Notification::send($recipients, new ApplicantStatusUpdated($applicant, $previousStatus, $applicant->status));
-            }
         } else {
             AuditLog::log('update', 'applicant', $applicant->id, $fullName,
                 "Updated applicant '{$fullName}'");

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
 import { analyticsAPI } from '../services/api'
 import {
-  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area
 } from 'recharts'
@@ -316,20 +316,6 @@ function AdminAnalyticsPage() {
   const rejectionRate = total > 0 ? ((rejected / total) * 100).toFixed(1) : 0
   const withdrawalRate = total > 0 ? ((withdrawn / total) * 100).toFixed(1) : 0
 
-  // Pipeline data for donut chart (reserved for future use)
-  // const pipelineData = useMemo(() =>
-  //   Object.entries(STATUS_META)
-  //     .map(([key, meta]) => ({
-  //       name: meta.label,
-  //       key,
-  //       value: dashboard?.by_status?.find((s) => s.status === key)?.total ?? 0,
-  //       color: meta.color,
-  //     }))
-  //     .filter((d) => d.value > 0)
-  //     .sort((a, b) => b.value - a.value),
-  //   [dashboard?.by_status]
-  // )
-
   // Pipeline donut data - show all statuses including hired and rejected
   const pipelineDonutData = useMemo(() => {
     const data = Object.entries(STATUS_META)
@@ -396,8 +382,6 @@ function AdminAnalyticsPage() {
             label={`Total Applicants (${periodLabel})`}
             value={loading ? '—' : fmt(total)}
             sub={loading ? '' : `${dashboard?.recent_count ?? 0} new in last ${recentDaysLabel}`}
-            trend={12.5}
-            isPositive={true}
             color="#0f3d2e"
             bgColor="rgba(15,61,46,0.1)"
             delay={0}
@@ -407,8 +391,6 @@ function AdminAnalyticsPage() {
             label="In Pipeline"
             value={loading ? '—' : fmt(inPipeline)}
             sub={loading ? '' : `${pipelineRate}% of total`}
-            trend={8.3}
-            isPositive={true}
             color="#2d5f8a"
             bgColor="rgba(45,95,138,0.1)"
             delay={100}
@@ -417,9 +399,7 @@ function AdminAnalyticsPage() {
             icon="✅"
             label="Hired"
             value={loading ? '—' : fmt(hired)}
-            sub={loading ? '' : `${conversionRate}% conversion`}
-            trend={-2.1}
-            isPositive={false}
+            sub={loading ? '' : `${dashboard?.hire_rate ?? conversionRate}% conversion`}
             color="#2d7a3a"
             bgColor="rgba(45,122,58,0.1)"
             delay={200}
@@ -428,9 +408,7 @@ function AdminAnalyticsPage() {
             icon="❌"
             label="Rejected"
             value={loading ? '—' : fmt(rejected)}
-            sub={loading ? '' : `${rejectionRate}% of total`}
-            trend={5.4}
-            isPositive={false}
+            sub={loading ? '' : `${dashboard?.rejection_rate ?? rejectionRate}% of total`}
             color="#dc2626"
             bgColor="rgba(220,38,38,0.1)"
             delay={300}
