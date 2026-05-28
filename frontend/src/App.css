@@ -7215,7 +7215,7 @@ textarea {
 
 .um-perm-head {
   display: grid;
-  grid-template-columns: 1fr repeat(4, 130px);
+  grid-template-columns: 1fr repeat(5, 130px);
   align-items: center;
   padding: 0.75rem 1.4rem;
   background: rgba(15,61,46,0.04);
@@ -7234,7 +7234,7 @@ textarea {
 
 .um-perm-row {
   display: grid;
-  grid-template-columns: 1fr repeat(4, 130px);
+  grid-template-columns: 1fr repeat(5, 130px);
   align-items: center;
   padding: 0.75rem 1.4rem;
   border-bottom: 1px solid rgba(15,61,46,0.05);
@@ -7563,7 +7563,7 @@ textarea {
   .um-field-row  { grid-template-columns: 1fr; }
   .um-role-grid  { grid-template-columns: 1fr; }
   .um-perm-head,
-  .um-perm-row   { grid-template-columns: 1fr repeat(4, 68px); padding: 0.65rem 1rem; font-size: 0.75rem; }
+  .um-perm-row   { grid-template-columns: 1fr repeat(5, 68px); padding: 0.65rem 1rem; font-size: 0.75rem; }
   .um-perm-col-name { font-size: 0.58rem; }
 }
 
@@ -8157,7 +8157,7 @@ textarea {
   /* ─ Users page perm table tighter ─ */
   .um-perm-head,
   .um-perm-row {
-    grid-template-columns: 1fr repeat(4, 64px);
+    grid-template-columns: 1fr repeat(5, 64px);
     padding: 0.6rem 0.75rem;
     font-size: 0.74rem;
   }
@@ -8218,7 +8218,7 @@ textarea {
   .um-add-btn { padding: 7px 14px; font-size: 0.8rem; }
   .um-perm-head,
   .um-perm-row {
-    grid-template-columns: 1fr repeat(4, 52px);
+    grid-template-columns: 1fr repeat(5, 52px);
     padding: 0.5rem 0.6rem;
     font-size: 0.7rem;
   }
@@ -8596,7 +8596,7 @@ textarea {
   .admin-kpi-body strong { font-size: 1.35rem; }
   .apply-body { padding: 1rem 0.5rem 2.5rem; }
   .um-perm-head,
-  .um-perm-row { grid-template-columns: 1fr repeat(4, 44px); font-size: 0.65rem; }
+  .um-perm-row { grid-template-columns: 1fr repeat(5, 44px); font-size: 0.65rem; }
   .um-perm-col-name { font-size: 0.44rem; }
 
   /* Position modal form stacks on mobile */

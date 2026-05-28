@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
 import { analyticsAPI } from '../services/api'
@@ -125,13 +126,47 @@ function ChartCard({ title, subtitle, children, loading, empty, emptyIcon = '�
 // Period Selector Dropdown
 function PeriodSelector({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [focusedIndex, setFocusedIndex] = useState(-1)
   const selected = PERIOD_OPTIONS.find(opt => opt.value === value)
+
+  const toggle = () => {
+    setIsOpen(prev => !prev)
+    if (!isOpen) setFocusedIndex(PERIOD_OPTIONS.findIndex(opt => opt.value === value))
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      toggle()
+    }
+  }
+
+  const handleOptionKeyDown = (e, index) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setFocusedIndex((prev) => (prev + 1) % PERIOD_OPTIONS.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setFocusedIndex((prev) => (prev - 1 + PERIOD_OPTIONS.length) % PERIOD_OPTIONS.length)
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onChange(PERIOD_OPTIONS[index].value)
+      setIsOpen(false)
+    } else if (e.key === 'Escape') {
+      setIsOpen(false)
+    }
+  }
 
   return (
     <div className="period-selector">
       <button
         className="period-trigger"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggle}
+        onKeyDown={handleKeyDown}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        role="combobox"
+        tabIndex="0"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -145,15 +180,24 @@ function PeriodSelector({ value, onChange }) {
         </svg>
       </button>
       {isOpen && (
-        <div className="period-dropdown">
-          {PERIOD_OPTIONS.map((opt) => (
+        <div
+          className="period-dropdown"
+          role="listbox"
+          aria-label="Select time period"
+          onKeyDown={(e) => { if (e.key === 'Escape') setIsOpen(false) }}
+        >
+          {PERIOD_OPTIONS.map((opt, index) => (
             <button
               key={opt.value}
-              className={`period-option ${value === opt.value ? 'active' : ''}`}
+              className={`period-option ${value === opt.value ? 'active' : ''} ${focusedIndex === index ? 'focused' : ''}`}
               onClick={() => {
                 onChange(opt.value)
                 setIsOpen(false)
               }}
+              onKeyDown={(e) => handleOptionKeyDown(e, index)}
+              role="option"
+              aria-selected={value === opt.value}
+              tabIndex="-1"
             >
               <span className="period-option-label">{opt.label}</span>
               {value === opt.value && (
@@ -193,7 +237,7 @@ function DonutChart({ data, total, loading }) {
 
   const activeData = activeIndex !== null ? data[activeIndex] : null
   const displayTotal = activeData ? activeData.value : total
-  const displayLabel = activeData ? activeData.name : 'Total'
+  const displayLabel = activeData ? `${activeData.name} Total` : 'Grand Total'
 
   return (
     <div className="donut-chart-wrapper">
@@ -259,6 +303,7 @@ function AdminAnalyticsPage() {
   const [error, setError] = useState(null)
   const [period, setPeriod] = useState(30)
   const [animateCharts, setAnimateCharts] = useState(false)
+  const [modalType, setModalType] = useState(null) // 'positions' | 'sources' | null
 
   const load = useCallback(async () => {
     if (!user) return
@@ -289,8 +334,25 @@ function AdminAnalyticsPage() {
   const fmt = (n) => (n ?? 0).toLocaleString()
   const periodLabel = useMemo(() => {
     const selected = PERIOD_OPTIONS.find(opt => opt.value === period)
-    return selected?.label ?? 'Custom'
+    return selected?.label ?? (period === 0 ? 'All Time' : 'Custom')
   }, [period])
+
+  // Trend data
+  const trendData = useMemo(() => {
+    if (!dashboard?.monthly_trend) return []
+    return dashboard.monthly_trend.map((item, index, arr) => ({
+      ...item,
+      trend: index > 0 ? ((item.total - arr[index - 1].total) / arr[index - 1].total * 100).toFixed(1) : 0
+    }))
+  }, [dashboard?.monthly_trend])
+
+  // Derive current overall trend from monthly data for the KPI cards
+  const latestTrend = useMemo(() => {
+    if (!trendData || trendData.length === 0) return null
+    return trendData[trendData.length - 1].trend
+  }, [trendData])
+
+  const isTrendPositive = latestTrend > 0
 
   // Backend "recent_count" uses same period (capped at 30d), or 30d when All Time.
   const recentDaysLabel = useMemo(() => {
@@ -338,14 +400,6 @@ function AdminAnalyticsPage() {
     [pipelineDonutData]
   )
 
-  // Trend data
-  const trendData = useMemo(() => {
-    if (!dashboard?.monthly_trend) return []
-    return dashboard.monthly_trend.map((item, index, arr) => ({
-      ...item,
-      trend: index > 0 ? ((item.total - arr[index - 1].total) / arr[index - 1].total * 100).toFixed(1) : 0
-    }))
-  }, [dashboard?.monthly_trend])
 
   return (
     <AdminLayout pageTitle="Analytics">
@@ -382,6 +436,8 @@ function AdminAnalyticsPage() {
             label={`Total Applicants (${periodLabel})`}
             value={loading ? '—' : fmt(total)}
             sub={loading ? '' : `${dashboard?.recent_count ?? 0} new in last ${recentDaysLabel}`}
+            trend={latestTrend}
+            isPositive={isTrendPositive}
             color="#0f3d2e"
             bgColor="rgba(15,61,46,0.1)"
             delay={0}
@@ -496,6 +552,15 @@ function AdminAnalyticsPage() {
               loading={loading}
               empty={!loading && !(dashboard?.by_position?.length)}
               emptyText="No position data available"
+              action={
+                <button
+                  type="button"
+                  className="btn-view-all"
+                  onClick={() => setModalType('positions')}
+                >
+                  View All
+                </button>
+              }
             >
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart
@@ -548,6 +613,15 @@ function AdminAnalyticsPage() {
               loading={loading}
               empty={!loading && !(dashboard?.by_source?.length)}
               emptyText="No source data available"
+              action={
+                <button
+                  type="button"
+                  className="btn-view-all"
+                  onClick={() => setModalType('sources')}
+                >
+                  View All
+                </button>
+              }
             >
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart
@@ -574,7 +648,7 @@ function AdminAnalyticsPage() {
                     width={130}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#1e293b', fontWeight: 500 }}
+                    tick={{ fontSize: 12, fill: '#1e293b', fontWeights: 500 }}
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
@@ -715,10 +789,124 @@ function AdminAnalyticsPage() {
           font-weight: 500;
         }
 
+        .period-option.focused {
+          background: #f1f5f9;
+          outline: 2px solid #cbd5e1;
+        }
+
         .period-backdrop {
           position: fixed;
           inset: 0;
           z-index: -1;
+        }
+
+        .btn-view-all {
+          background: none;
+          border: none;
+          color: #0f3d2e;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: underline;
+          padding: 0;
+          opacity: 0.8;
+          transition: opacity 0.2s;
+        }
+
+        .btn-view-all:hover {
+          opacity: 1;
+        }
+
+        .analytics-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.4);
+          backdrop-filter: blur(4px);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+        }
+
+        .analytics-modal {
+          background: white;
+          width: 100%;
+          max-width: 500px;
+          border-radius: 16px;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+          display: flex;
+          flex-direction: column;
+          max-height: 80vh;
+          overflow: hidden;
+          animation: modalIn 0.2s ease-out;
+        }
+
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        .analytics-modal-header {
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .analytics-modal-header h3 {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: #0f172a;
+        }
+
+        .analytics-modal-close {
+          background: none;
+          border: none;
+          font-size: 1.25rem;
+          cursor: pointer;
+          color: #64748b;
+          transition: color 0.2s;
+        }
+
+        .analytics-modal-close:hover {
+          color: #0f172a;
+        }
+
+        .analytics-modal-body {
+          padding: 0;
+          overflow-y: auto;
+        }
+
+        .analytics-modal-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.875rem;
+        }
+
+        .analytics-modal-table th {
+          text-align: left;
+          padding: 0.75rem 1.5rem;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .analytics-modal-table td {
+          padding: 0.75rem 1.5rem;
+          border-bottom: 1px solid #f1f5f9;
+          color: #334155;
+        }
+
+        .analytics-modal-table tr:last-child td {
+          border-bottom: none;
+        }
+
+        .analytics-modal-table tr:hover td {
+          background: #f8fafc;
         }
 
         /* Alert */
@@ -1066,6 +1254,37 @@ function AdminAnalyticsPage() {
         }
 
       `}</style>
+      {modalType && createPortal((
+        <div className="analytics-modal-backdrop" onMouseDown={() => setModalType(null)}>
+          <div className="analytics-modal" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="analytics-modal-header">
+              <h3>{modalType === 'positions' ? 'All Positions' : 'All Application Sources'}</h3>
+              <button className="analytics-modal-close" onClick={() => setModalType(null)}>✕</button>
+            </div>
+            <div className="analytics-modal-body">
+              <table className="analytics-modal-table">
+                <thead>
+                  <tr>
+                    <th>{modalType === 'positions' ? 'Position' : 'Source'}</th>
+                    <th>Total Applications</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(modalType === 'positions'
+                    ? (dashboard?.by_position ?? [])
+                    : (dashboard?.by_source ?? []).sort((a, b) => b.total - a.total)
+                  ).map((item, i) => (
+                    <tr key={i}>
+                      <td>{modalType === 'positions' ? item.position_applied_for : (item.vacancy_source || 'Unknown')}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.total.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ), document.body)}
     </AdminLayout>
   )
 }

@@ -206,7 +206,9 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
                       <td className="um-muted">
-                        {new Date(u.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+                        {u.created_at && !isNaN(new Date(u.created_at).getTime())
+                          ? new Date(u.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+                          : 'N/A'}
                       </td>
                       {isAdmin && (
                         <td>

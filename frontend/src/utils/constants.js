@@ -33,6 +33,7 @@ export const ROLE_LABELS = {
   admin: 'Administrator',
   hr_manager: 'HR Manager',
   hr_supervisor: 'HR Supervisor',
+  recruiter_lead: 'Recruiter Lead',
   recruiter: 'Recruiter',
 }
 
@@ -63,6 +64,15 @@ export const ROLE_OPTIONS = [
       activeBg: 'rgba(120,80,180,0.12)',
       color: '#5b3d99',
       border: 'rgba(120,80,180,0.30)',
+    },
+    {
+      value: 'recruiter_lead',
+      label: 'Recruiter Lead',
+      desc: 'Same as Recruiter, but can also manage job positions.',
+      icon: '🌟',
+      activeBg: 'rgba(200,164,65,0.20)',
+      color: '#8a6a16',
+      border: 'rgba(200,164,65,0.50)',
     },
     {
       value: 'recruiter',
@@ -126,7 +136,7 @@ export const CIVIL_STATUS_OPTIONS = [
 export const PERMISSION_DEFAULTS = {
   canEdit:            ['admin', 'hr_manager', 'hr_supervisor'],
   canDelete:          ['admin', 'hr_manager', 'hr_supervisor'],
-  canManagePositions: ['admin', 'hr_manager', 'hr_supervisor'],
+  canManagePositions: ['admin', 'hr_manager', 'hr_supervisor', 'recruiter_lead'],
   canViewAnalytics:   ['admin', 'hr_manager', 'hr_supervisor'],
   canManageUsers:     ['admin'],
 }

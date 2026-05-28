@@ -24,7 +24,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', Rule::in(['admin', 'hr_manager', 'hr_supervisor', 'recruiter'])],
+            'role' => ['required', Rule::in(['admin', 'hr_manager', 'hr_supervisor', 'recruiter', 'recruiter_lead'])],
         ]);
 
         $user = User::create([
@@ -46,7 +46,7 @@ class UserController extends Controller
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
-            'role' => ['sometimes', Rule::in(['admin', 'hr_manager', 'hr_supervisor', 'recruiter'])],
+            'role' => ['sometimes', Rule::in(['admin', 'hr_manager', 'hr_supervisor', 'recruiter', 'recruiter_lead'])],
         ]);
 
         if (isset($data['password']) && $data['password']) {

@@ -57,7 +57,7 @@ return [
     |--------------------------------------------------------------------------
     |
     */
-    'roles' => ['admin', 'hr_manager', 'hr_supervisor', 'recruiter', 'bu_manager'],
+    'roles' => ['admin', 'hr_manager', 'hr_supervisor', 'recruiter', 'recruiter_lead', 'bu_manager'],
 
     /*
     |--------------------------------------------------------------------------
