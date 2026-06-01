@@ -127,7 +127,7 @@ export const applicantAPI = {
     )
   },
 
-  create: async (data) => {
+  create: async (token, data) => {
     const formData = new FormData()
     Object.keys(data).forEach(key => {
       if (data[key] !== null && data[key] !== undefined) {
@@ -140,6 +140,7 @@ export const applicantAPI = {
       {
         method: 'POST',
         credentials: 'include',
+        headers: buildHeaders({ token }),
         body: formData,
       },
       'Failed to submit application'

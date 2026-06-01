@@ -6,7 +6,7 @@ import AdminLayout from '../components/AdminLayout'
 import ApplicantTimeline from '../components/ApplicantTimeline'
 import Toast from '../components/Toast'
 import { applicantAPI, noteAPI, positionAPI, userAPI } from '../services/api'
-import { STATUS_OPTIONS, PIPELINE_STATUS_OPTIONS, TERMINAL_STATUS_OPTIONS, SHORT_STATUS, AGE_RANGE_BOUNDS } from '../utils/constants'
+import { STATUS_OPTIONS, PIPELINE_STATUS_OPTIONS, TERMINAL_STATUS_OPTIONS, SHORT_STATUS, AGE_RANGE_BOUNDS, EDUCATION_OPTIONS, GENDER_OPTIONS, VACANCY_SOURCE_OPTIONS, CIVIL_STATUS_OPTIONS } from '../utils/constants'
 import { formatStatus, formatText, toName, timeAgo, formatDate, formatDateTime, formatCurrency, safeValue } from '../utils/helpers'
 
 const shortStatus = (v) => SHORT_STATUS[v] ?? formatStatus(v)
@@ -39,6 +39,74 @@ function AdminApplicantsPage() {
   const getParam = (key, defaultValue = '') => searchParams.get(key) ?? defaultValue
 
   const [applicants, setApplicants]       = useState([])
+  const [showAddModal, setShowAddModal]     = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [addForm, setAddForm] = useState({
+    position_applied_for: '',
+    last_name: '',
+    first_name: '',
+    middle_name: '',
+    permanent_address: '',
+    current_address: '',
+    gender: '',
+    civil_status: '',
+    birthdate: '',
+    highest_education_level: '',
+    bachelors_degree_course: '',
+    year_graduated: '',
+    last_school_attended: '',
+    prc_license: '',
+    total_work_experience_years: '',
+    contact_number: '',
+    email_address: '',
+    expected_salary: '',
+    preferred_work_location: '',
+    vacancy_source: '',
+  })
+
+  const handleAddChange = (e) => {
+    const { name, value } = e.target
+    setAddForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleAddSubmit = async (e) => {
+    e.preventDefault()
+    setAdding(true)
+    try {
+      await applicantAPI.create(token, addForm)
+      setSuccess('Applicant added successfully.')
+      setShowAddModal(false)
+      setAddForm({
+        position_applied_for: '',
+        last_name: '',
+        first_name: '',
+        middle_name: '',
+        permanent_address: '',
+        current_address: '',
+        gender: '',
+        civil_status: '',
+        birthdate: '',
+        highest_education_level: '',
+        bachelors_degree_course: '',
+        year_graduated: '',
+        last_school_attended: '',
+        prc_license: '',
+        total_work_experience_years: '',
+        contact_number: '',
+        email_address: '',
+        expected_salary: '',
+        preferred_work_location: '',
+        vacancy_source: '',
+      })
+      setTimeout(() => setSuccess(null), 3000)
+      loadApplicants(token)
+    } catch (err) {
+      setError(err?.message || 'Failed to add applicant.')
+      setTimeout(() => setError(null), 5000)
+    } finally {
+      setAdding(false)
+    }
+  }
   const [loading, setLoading]             = useState(false)
   const [error, setError]                 = useState(null)
   const [success, setSuccess]             = useState(null)
@@ -97,13 +165,6 @@ function AdminApplicantsPage() {
   const [viewNotes, setViewNotes]         = useState([])
   const [viewLoading, setViewLoading]     = useState(false)
   const [viewError, setViewError]         = useState(null)
-
-  const AGE_RANGE_BOUNDS = {
-    below_30:   { ageMin: undefined, ageMax: 29 },
-    age_30_45:  { ageMin: 30, ageMax: 45 },
-    age_46_61:  { ageMin: 46, ageMax: 61 },
-    age_61_plus:{ ageMin: 61, ageMax: undefined },
-  }
 
   const selectedAgeRange = AGE_RANGE_BOUNDS[ageRangeFilter] || { ageMin: undefined, ageMax: undefined }
 
@@ -665,6 +726,15 @@ function AdminApplicantsPage() {
             </button>
             <button type="button" className="btn btn-outline btn-sm" onClick={exportPDF} disabled={!applicants.length}>
               ↓ Export PDF
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              style={{ background: 'linear-gradient(135deg, #1a6644, #0f3d2e)', color: 'white', border: 'none' }}
+              onClick={() => setShowAddModal(true)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Applicant
             </button>
           </div>
         </div>
@@ -1618,6 +1688,150 @@ function AdminApplicantsPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      ), document.body)}
+      {showAddModal && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => setShowAddModal(false)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add new applicant"
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ maxWidth: '700px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}
+          >
+            <div className="del-modal-icon" style={{ color: 'var(--p)', background: 'var(--p-content)' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <h3 className="del-modal-title">Add New Applicant</h3>
+
+            <form onSubmit={handleAddSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Position Applied For *</label>
+                  <select name="position_applied_for" value={addForm.position_applied_for} onChange={handleAddChange} required className="select select-bordered select-sm w-full">
+                    <option value="">Select Position</option>
+                    {positions.map(p => <option key={p.id} value={p.title}>{p.title}</option>)}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>First Name *</label>
+                  <input name="first_name" value={addForm.first_name} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Last Name *</label>
+                  <input name="last_name" value={addForm.last_name} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Middle Name</label>
+                  <input name="middle_name" value={addForm.middle_name} onChange={handleAddChange} className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Email *</label>
+                  <input name="email_address" type="email" value={addForm.email_address} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Contact Number *</label>
+                  <input name="contact_number" value={addForm.contact_number} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Birthdate *</label>
+                  <input name="birthdate" type="date" value={addForm.birthdate} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Gender *</label>
+                  <select name="gender" value={addForm.gender} onChange={handleAddChange} required className="select select-bordered select-sm w-full">
+                    <option value="">Select Gender</option>
+                    {GENDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Civil Status *</label>
+                  <select name="civil_status" value={addForm.civil_status} onChange={handleAddChange} required className="select select-bordered select-sm w-full">
+                    <option value="">Select Status</option>
+                    {CIVIL_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Permanent Address *</label>
+                  <textarea name="permanent_address" value={addForm.permanent_address} onChange={handleAddChange} required className="textarea textarea-bordered textarea-sm w-full" rows="2" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Current Address *</label>
+                  <textarea name="current_address" value={addForm.current_address} onChange={handleAddChange} required className="textarea textarea-bordered textarea-sm w-full" rows="2" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Highest Education *</label>
+                  <select name="highest_education_level" value={addForm.highest_education_level} onChange={handleAddChange} required className="select select-bordered select-sm w-full">
+                    <option value="">Select Education</option>
+                    {EDUCATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Degree / Course</label>
+                  <input name="bachelors_degree_course" value={addForm.bachelors_degree_course} onChange={handleAddChange} className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Year Graduated *</label>
+                  <input name="year_graduated" type="number" value={addForm.year_graduated} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Last School Attended *</label>
+                  <input name="last_school_attended" value={addForm.last_school_attended} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>PRC License</label>
+                  <input name="prc_license" value={addForm.prc_license} onChange={handleAddChange} className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Work Experience (Yrs) *</label>
+                  <input name="total_work_experience_years" type="number" step="0.1" value={addForm.total_work_experience_years} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Expected Salary</label>
+                  <input name="expected_salary" type="number" value={addForm.expected_salary} onChange={handleAddChange} className="input input-bordered input-sm w-full" />
+                </div>
+                <div className="form-control">
+                  <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Preferred Location *</label>
+                  <input name="preferred_work_location" value={addForm.preferred_work_location} onChange={handleAddChange} required className="input input-bordered input-sm w-full" />
+                </div>
+              </div>
+
+              <div className="form-control">
+                <label className="label-text" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>Vacancy Source *</label>
+                <select name="vacancy_source" value={addForm.vacancy_source} onChange={handleAddChange} required className="select select-bordered select-sm w-full">
+                  <option value="">Select Source</option>
+                  {VACANCY_SOURCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+
+              <div className="del-modal-actions">
+                <button
+                  type="button"
+                  className="del-modal-cancel"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="del-modal-confirm"
+                  disabled={adding}
+                >
+                  {adding ? 'Adding...' : 'Add Applicant'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       ), document.body)}
