@@ -22,7 +22,7 @@ class ApplicantController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Applicant::query();
+        $query = Applicant::with('updatedBy');
 
         $this->applyArchivedFilter($query, $request);
         $this->applySearchFilter($query, $request);
@@ -397,6 +397,7 @@ class ApplicantController extends Controller
         if ($sort === 'updated_by') {
             return $query
                 ->leftJoin('users', 'applicants.updated_by', '=', 'users.id')
+                ->orderByRaw('users.name IS NULL')
                 ->orderBy('users.name', $direction)
                 ->orderBy('applicants.id', 'desc')
                 ->select('applicants.*')
@@ -550,6 +551,10 @@ class ApplicantController extends Controller
         }
 
         unset($data['upload_cv']);
+
+        if (auth()->check()) {
+            $data['updated_by'] = auth()->id();
+        }
 
         $applicant = Applicant::create($data);
 

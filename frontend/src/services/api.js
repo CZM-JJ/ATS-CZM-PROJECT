@@ -403,6 +403,17 @@ export const userAPI = {
     )
   },
 
+  list: async (token) => {
+    return requestJson(
+      `${apiBase}/api/users/list`,
+      {
+        credentials: 'include',
+        headers: buildHeaders({ token }),
+      },
+      'Failed to fetch users'
+    )
+  },
+
   create: async (token, data) => {
     return requestJson(
       `${apiBase}/api/users`,

@@ -2251,8 +2251,10 @@ textarea {
 }
 
 .admin-topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   background: rgba(10, 32, 22, 0.97);
   border-bottom: 1px solid rgba(200, 164, 65, 0.2);
@@ -2296,14 +2298,14 @@ textarea {
 
 /* Helps scrollIntoView land below sticky header */
 .admin-detail {
-  scroll-margin-top: 92px;
+  scroll-margin-top: 120px;
 }
 
 .admin-content {
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;
-  padding: 2rem 1.75rem 5rem;
+  padding: 120px 1.75rem 5rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -8723,6 +8725,32 @@ textarea {
   .admin-card-title {
     font-size: 0.9rem;
   }
+}
+
+/* ── Unsaved Changes Indicators ── */
+.admin-status-dirty {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 8px;
+  animation: pulseGlow 2s infinite ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+
+.apply-submit-dirty {
+  background: linear-gradient(135deg, #c8a441 0%, #b89d3a 100%) !important;
+  color: #fff !important;
+  border-color: #f7f3ea !important;
+  box-shadow: 0 0 12px rgba(200, 164, 65, 0.4) !important;
+  animation: pulseGlow 2s infinite ease-in-out;
 }
 
 

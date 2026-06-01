@@ -2,6 +2,15 @@
 
 This guide provides step-by-step instructions for hosting the Applicant Tracking System (ATS-CZM) on a Hostinger VPS using a LEMP stack (Linux, Nginx, MySQL, PHP).
 
+## ⚠️ CRITICAL PRODUCTION WARNINGS
+Before starting, keep these three rules in mind to avoid common deployment failures:
+
+1. **Disable Debug Mode:** In your backend `.env`, set `APP_DEBUG=false`. Leaving this `true` in production is a major security risk as it exposes your credentials and system paths to users.
+2. **Permissions are Mandatory:** Laravel will throw a 500 error if the `storage` and `bootstrap/cache` directories are not owned by the web server. Always run the `chown` commands in Step 2.
+3. **HTTPS is Required:** You **MUST** use SSL (Certbot). Browsers block "Mixed Content" (requests from an HTTPS site to an HTTP API). Without SSL, your frontend will not be able to communicate with your backend.
+
+---
+
 ## 📋 Prerequisites
 - **VPS OS:** Ubuntu 22.04 or 24.04 (Recommended).
 - **DNS:** Your domain pointed to the VPS IP address.

@@ -654,8 +654,8 @@ function AdminPage() {
           <h2>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'} 👋</h2>
           <p>
             {viewMode === 'active'
-              ? "Here's the active applicant pipeline. Select someone to view details."
-              : "You're viewing archived applicants. Restore or permanently delete records here."}
+              ? "Here's the active candidate pipeline. Select someone to view details."
+              : "You're viewing archived candidates. Restore or permanently delete records here."}
           </p>
         </div>
         <span className="admin-welcome-date">{todayLabel}</span>
@@ -663,8 +663,8 @@ function AdminPage() {
       <div className={`admin-card admin-card-pipeline admin-card-mode-${viewMode}`}>
         <div className="admin-card-head">
           <div>
-            <h2>{viewMode === 'active' ? 'Applicants' : 'Archived Applicants'}</h2>
-            <p>{total} {viewMode === 'archived' ? 'archived ' : ''}applicant{total !== 1 ? 's' : ''} · Signed in as {user?.name || 'User'}</p>
+            <h2>{viewMode === 'active' ? 'Candidates' : 'Archived Candidates'}</h2>
+            <p>Total {viewMode === 'archived' ? 'Archived ' : ''}Candidates: {total} | Account: {user?.name || 'User'} ({user?.role || 'User'})</p>
             <span className={`admin-mode-pill admin-mode-pill-${viewMode}`}>
               {viewMode === 'archived' ? 'Archive View' : 'Active View'}
             </span>
@@ -705,7 +705,7 @@ function AdminPage() {
           <aside className="admin-panel admin-sidebar">
             <div className="admin-panel-head">
               <h4>{viewMode === 'active' ? 'Pipeline' : 'Archive'}</h4>
-              {loadingApplicants ? <span>Loading...</span> : <span>{total} {viewMode === 'archived' ? 'archived ' : ''}applicants</span>}
+              {loadingApplicants ? <span>Loading...</span> : <span>Total Records: {total}</span>}
             </div>
             <div className="admin-filters">
               <input

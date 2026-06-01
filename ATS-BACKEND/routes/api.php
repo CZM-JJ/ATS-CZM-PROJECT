@@ -111,6 +111,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
             ->middleware('perm:canManagePositions');
 
         // User management - dynamic permission: canManageUsers
+        Route::get('users/list', [UserController::class, 'listUsers']);
         Route::get('users', [UserController::class, 'index'])
             ->middleware('perm:canManageUsers');
         Route::post('users', [UserController::class, 'store'])

@@ -18,6 +18,13 @@ class UserController extends Controller
             ->get());
     }
 
+    public function listUsers()
+    {
+        return User::select('id', 'name')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

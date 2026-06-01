@@ -74,7 +74,7 @@ function AdminApplicantsPage() {
     setAdding(true)
     try {
       await applicantAPI.create(token, addForm)
-      setSuccess('Applicant added successfully.')
+      setSuccess('Candidate added successfully.')
       setShowAddModal(false)
       setAddForm({
         position_applied_for: '',
@@ -575,7 +575,7 @@ function AdminApplicantsPage() {
   useEffect(() => {
     if (!user || !token) return
     loadPositions(token)
-    userAPI.getAll(token).then(payload => {
+    userAPI.list(token).then(payload => {
       setUsers(Array.isArray(payload) ? payload : (payload.data || []))
     }).catch((err) => {
       console.error('Failed to load users', err)
@@ -676,7 +676,7 @@ function AdminApplicantsPage() {
           <h2>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'} 👋</h2>
           <p>
             You have <strong>{total}</strong> {viewMode === 'archived' ? 'archived ' : ''}
-            applicant{total !== 1 ? 's' : ''} in the system.
+            candidate{total !== 1 ? 's' : ''} in the system.
           </p>
         </div>
         <span className="admin-welcome-date">{todayLabel}</span>
@@ -685,11 +685,11 @@ function AdminApplicantsPage() {
       <div className={`admin-card admin-card-mode-${viewMode}`}>
         <div className="admin-card-head">
           <div>
-            <h2>{viewMode === 'archived' ? 'Archived applicants' : 'Active applicants'}</h2>
+            <h2>{viewMode === 'archived' ? 'Archived Candidates' : 'Active Candidates'}</h2>
             <p>
               {total > 0
-                ? `Showing ${firstItem}–${lastItem} of ${total} applicant${total !== 1 ? 's' : ''}`
-                : `No ${viewMode} applicants found`}
+                ? `Showing ${firstItem}–${lastItem} of ${total} candidate${total !== 1 ? 's' : ''}`
+                : `No ${viewMode} candidates found`}
             </p>
             <span className={`admin-mode-pill admin-mode-pill-${viewMode}`}>
               {viewMode === 'archived' ? 'Archive View' : 'Active View'}
@@ -1580,9 +1580,9 @@ function AdminApplicantsPage() {
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
-            <h3 className="del-modal-title">Archive {selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''}?</h3>
+            <h3 className="del-modal-title">Archive {selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''}?</h3>
             <p className="del-modal-body">
-              <strong>{selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''}</strong> will be moved to archive and hidden from active applicants.
+              <strong>{selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''}</strong> will be moved to archive and hidden from active candidates.
             </p>
             <div className="del-modal-actions">
               <button
@@ -1621,9 +1621,9 @@ function AdminApplicantsPage() {
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <h3 className="del-modal-title">Restore {selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''}?</h3>
+            <h3 className="del-modal-title">Restore {selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''}?</h3>
             <p className="del-modal-body">
-              <strong>{selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''}</strong> will be restored to the active list.
+              <strong>{selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''}</strong> will be restored to the active list.
             </p>
             <div className="del-modal-actions">
               <button
@@ -1662,9 +1662,9 @@ function AdminApplicantsPage() {
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
-            <h3 className="del-modal-title">Delete {selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''} permanently?</h3>
+            <h3 className="del-modal-title">Delete {selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''} permanently?</h3>
             <p className="del-modal-body">
-              <strong>{selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''}</strong> will be permanently removed from the system, including their CV files and notes. This cannot be undone.
+              <strong>{selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''}</strong> will be permanently removed from the system, including their CV files and notes. This cannot be undone.
             </p>
             <div className="del-modal-actions">
               <button
