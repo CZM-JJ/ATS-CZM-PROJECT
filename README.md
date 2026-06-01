@@ -70,6 +70,18 @@ Start backend with:
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
+## 🚀 Deployment
+
+For a detailed step-by-step guide on hosting this project on a Hostinger VPS (LEMP stack), see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+**Deployment Summary:**
+1. **Server Prep:** Install Ubuntu, Nginx, MySQL, and PHP 8.2+.
+2. **Backend:** Configure Laravel, database, and set directory permissions.
+3. **Frontend:** Install Node.js and run production build (`npm run build`).
+4. **Web Server:** Configure Nginx server blocks for `yourdomain.com` and `api.yourdomain.com`.
+5. **Security:** Install SSL certificates using Certbot (HTTPS).
+6. **Finalize:** Update `.env` files with production URLs and credentials.
+
 ## Key Directories
 
 | Path | Description |
