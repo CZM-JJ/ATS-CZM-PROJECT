@@ -33,7 +33,7 @@ function AdminApplicantsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { token, user, isLoading } = useAuth()
-  const { canEdit, canDelete } = useRole()
+  const { canEdit, canDelete, canViewAnalytics } = useRole()
 
   // Initialize filters from URL params
   const getParam = (key, defaultValue = '') => searchParams.get(key) ?? defaultValue
@@ -721,21 +721,27 @@ function AdminApplicantsPage() {
                 Clear {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''}  ✕
               </button>
             )}
-            <button type="button" className="btn btn-outline btn-sm" onClick={exportCSV} disabled={!applicants.length}>
-              ↓ Export CSV
-            </button>
-            <button type="button" className="btn btn-outline btn-sm" onClick={exportPDF} disabled={!applicants.length}>
-              ↓ Export PDF
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm"
-              style={{ background: 'linear-gradient(135deg, #1a6644, #0f3d2e)', color: 'white', border: 'none' }}
-              onClick={() => setShowAddModal(true)}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add Applicant
-            </button>
+            {canViewAnalytics && (
+              <>
+                <button type="button" className="btn btn-outline btn-sm" onClick={exportCSV} disabled={!applicants.length}>
+                  ↓ Export CSV
+                </button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={exportPDF} disabled={!applicants.length}>
+                  ↓ Export PDF
+                </button>
+              </>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ background: 'linear-gradient(135deg, #1a6644, #0f3d2e)', color: 'white', border: 'none' }}
+                onClick={() => setShowAddModal(true)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Applicant
+              </button>
+            )}
           </div>
         </div>
 
