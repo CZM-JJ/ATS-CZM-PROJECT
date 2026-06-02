@@ -81,7 +81,7 @@ class PositionController extends Controller
     {
         return PositionResource::collection(Position::query()
             ->orderBy('title')
-            ->get(['id', 'title']));
+            ->get());
     }
 
     public function vacancyRequests()
