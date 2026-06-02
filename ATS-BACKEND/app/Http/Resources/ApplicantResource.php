@@ -35,7 +35,7 @@ class ApplicantResource extends JsonResource
             'vacancy_source' => $this->vacancy_source,
             'status' => $this->status,
             'updated_by' => $this->updated_by,
-            'updated_by_name' => $this->updated_by_name,
+            'updated_by_name' => $this->whenLoaded('updatedBy', $this->updated_by_name),
             'company_id' => $this->company_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
