@@ -46,8 +46,6 @@ class Applicant extends Model
         'deleted_at' => 'datetime',
     ];
 
-    protected $appends = ['updated_by_name'];
-
     public function getUpdatedByNameAttribute()
     {
         return $this->updatedBy?->name;
