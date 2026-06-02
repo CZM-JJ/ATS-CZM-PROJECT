@@ -222,9 +222,7 @@ class PositionController extends Controller
         $titleRules = $isUpdate ? ['sometimes', 'required', 'string', 'max:255'] : ['required', 'string', 'max:255'];
         $locationRules = $isUpdate ? ['sometimes', 'required', 'string', 'max:255'] : ['required', 'string', 'max:255'];
 
-        $companyRules = $isUpdate
-            ? ['sometimes', 'exists:companies,id']
-            : ['exists:companies,id'];
+        $companyRules = ['nullable', 'exists:companies,id'];
 
         return $request->validate([
             'title' => $titleRules,
