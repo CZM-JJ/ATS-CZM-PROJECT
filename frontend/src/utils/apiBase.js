@@ -9,7 +9,7 @@ export function getApiBase() {
     return `http://${window.location.hostname}:8000`
   }
 
-  return ''
+  return window.location.origin
 }
 
 export const apiBase = getApiBase()
