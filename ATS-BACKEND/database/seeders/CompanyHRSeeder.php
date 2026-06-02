@@ -65,12 +65,8 @@ class CompanyHRSeeder extends Seeder
                     'name' => $name,
                     'password' => bcrypt('password'), // Default password: password
                     'role' => 'hr',
-                    'supports_all_bus' => $config['supports_all'],
                 ]
             );
-
-            // Update supports_all_bus in case user existed but was not a super HR
-            $user->update(['supports_all_bus' => $config['supports_all']]);
 
             if (! $config['supports_all']) {
                 $companyIds = [];

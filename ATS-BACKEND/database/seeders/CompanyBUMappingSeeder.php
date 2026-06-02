@@ -39,10 +39,8 @@ class CompanyBUMappingSeeder extends Seeder
             }
 
             if ($bus === 'all') {
-                $user->update(['supports_all_bus' => true]);
                 $user->companies()->sync(Company::all());
             } else {
-                $user->update(['supports_all_bus' => false]);
                 $companyIds = Company::whereIn('name', $bus)->pluck('id')->toArray();
                 $user->companies()->sync($companyIds);
             }

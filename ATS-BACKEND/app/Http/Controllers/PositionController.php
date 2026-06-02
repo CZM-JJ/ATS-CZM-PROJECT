@@ -96,8 +96,7 @@ class PositionController extends Controller
     public function approveRequest(Request $request, Position $position)
     {
         // Verify BU access or Admin/HR role
-        if (! auth()->user()->supports_all_bus &&
-            ! in_array(auth()->user()->role, ['admin', 'hr_manager', 'hr_supervisor']) &&
+        if (! in_array(auth()->user()->role, ['admin', 'hr_manager', 'hr_supervisor']) &&
             ! auth()->user()->companies()->where('companies.id', $position->company_id)->exists()) {
             abort(403, 'You are not authorized to approve positions for this company.');
         }
@@ -115,8 +114,7 @@ class PositionController extends Controller
 
     public function rejectRequest(Request $request, Position $position)
     {
-        if (! auth()->user()->supports_all_bus &&
-            ! in_array(auth()->user()->role, ['admin', 'hr_manager', 'hr_supervisor']) &&
+        if (! in_array(auth()->user()->role, ['admin', 'hr_manager', 'hr_supervisor']) &&
             ! auth()->user()->companies()->where('companies.id', $position->company_id)->exists()) {
             abort(403, 'You are not authorized to reject positions for this company.');
         }
@@ -138,8 +136,7 @@ class PositionController extends Controller
         $data = $this->normalizePositionData($validated);
 
         // Verify the user can create positions for this company
-        if (! auth()->user()->supports_all_bus &&
-            auth()->user()->role !== 'admin' &&
+        if (auth()->user()->role !== 'admin' &&
             ! auth()->user()->companies()->where('companies.id', $data['company_id'])->exists()) {
             return response()->json(['message' => 'You are not authorized to create positions for this company.'], 403);
         }
@@ -159,8 +156,7 @@ class PositionController extends Controller
     public function show(Position $position)
     {
         // Verify BU access
-        if (! auth()->user()->supports_all_bus &&
-            auth()->user()->role !== 'admin' &&
+        if (auth()->user()->role !== 'admin' &&
             ! auth()->user()->companies()->where('companies.id', $position->company_id)->exists()) {
             abort(403, 'You are not authorized to view positions for this company.');
         }
@@ -171,8 +167,7 @@ class PositionController extends Controller
     public function update(Request $request, Position $position)
     {
         // Verify BU access
-        if (! auth()->user()->supports_all_bus &&
-            auth()->user()->role !== 'admin' &&
+        if (auth()->user()->role !== 'admin' &&
             ! auth()->user()->companies()->where('companies.id', $position->company_id)->exists()) {
             abort(403, 'You are not authorized to update positions for this company.');
         }
@@ -190,8 +185,7 @@ class PositionController extends Controller
     public function destroy(Position $position): Response
     {
         // Verify BU access
-        if (! auth()->user()->supports_all_bus &&
-            auth()->user()->role !== 'admin' &&
+        if (auth()->user()->role !== 'admin' &&
             ! auth()->user()->companies()->where('companies.id', $position->company_id)->exists()) {
             abort(403, 'You are not authorized to delete positions for this company.');
         }
@@ -229,8 +223,8 @@ class PositionController extends Controller
         $locationRules = $isUpdate ? ['sometimes', 'required', 'string', 'max:255'] : ['required', 'string', 'max:255'];
 
         $companyRules = $isUpdate
-            ? ['sometimes', 'required', 'exists:companies,id']
-            : ['required', 'exists:companies,id'];
+            ? ['sometimes', 'exists:companies,id']
+            : ['exists:companies,id'];
 
         return $request->validate([
             'title' => $titleRules,

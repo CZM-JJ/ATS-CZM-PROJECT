@@ -24,7 +24,6 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'supports_all_bus',
     ];
 
     /**

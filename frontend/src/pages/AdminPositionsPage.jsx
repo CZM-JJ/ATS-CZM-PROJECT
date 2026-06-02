@@ -562,13 +562,12 @@ function AdminPositionsPage() {
                     />
                   </div>
                   <div className="pos-field">
-                    <label className="pos-label">Company <span className="pos-req">*</span></label>
+                    <label className="pos-label">Company</label>
                     <select
                       className="pos-input"
                       name="company_id"
                       value={form.company_id}
                       onChange={handleChange}
-                      required
                     >
                       <option value="">Select company</option>
                       {companies.map((c) => (

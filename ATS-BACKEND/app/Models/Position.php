@@ -34,7 +34,7 @@ class Position extends Model
 
     public function scopeForUser($query, $user)
     {
-        if ($user->role === 'admin' || $user->supports_all_bus) {
+        if ($user->role === 'admin') {
             return $query;
         }
 
