@@ -161,7 +161,7 @@ function AdminPositionsPage() {
       })
     }, 300)
     return () => clearTimeout(timer)
-  }, [user, searchTerm, statusFilter, sort, direction, page, perPage])
+  }, [user, searchTerm, statusFilter, sort, direction, page, perPage, token])
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -339,12 +339,12 @@ function AdminPositionsPage() {
               type="search"
               placeholder="Search positions or companies..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1) }}
             />
           </label>
           <label>
             <span className="filter-label-text">Status</span>
-            <select className="select select-bordered select-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="select select-bordered select-sm" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
               <option value="">All statuses</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>

@@ -305,16 +305,23 @@ export const positionAPI = {
   },
 
   getPaginated: async (token, params = {}) => {
-    const query = new URLSearchParams({
-      page: String(params.page ?? 1),
-      per_page: String(params.per_page ?? 20),
-      ...(params.search ? { search: params.search } : {}),
-      ...(params.status ? { status: params.status } : {}),
-      ...(params.sort ? { sort: params.sort } : {}),
-      ...(params.direction ? { direction: params.direction } : {}),
-    }).toString()
+    const urlParams = new URLSearchParams()
+    urlParams.set('page', String(params.page ?? 1))
+    urlParams.set('per_page', String(params.per_page ?? 20))
+    if (params.search && params.search.trim()) {
+      urlParams.set('search', params.search.trim())
+    }
+    if (params.status && params.status.trim()) {
+      urlParams.set('status', params.status.trim())
+    }
+    if (params.sort) {
+      urlParams.set('sort', params.sort)
+    }
+    if (params.direction) {
+      urlParams.set('direction', params.direction)
+    }
     return requestJson(
-      `${apiBase}/api/positions/admin?${query}`,
+      `${apiBase}/api/positions/admin?${urlParams.toString()}`,
       {
         credentials: 'include',
         headers: buildHeaders({ token }),
