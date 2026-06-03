@@ -17,7 +17,13 @@ class CheckRole
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, $roles, true)) {
+        // Handle comma-separated roles (e.g., 'admin,recruiter_lead,hr_manager')
+        $allowedRoles = [];
+        foreach ($roles as $roleGroup) {
+            $allowedRoles = array_merge($allowedRoles, array_map('trim', explode(',', $roleGroup)));
+        }
+
+        if (! $user || ! in_array($user->role, $allowedRoles, true)) {
             return response()->json([
                 'message' => 'Forbidden. You do not have permission to perform this action.',
             ], 403);
