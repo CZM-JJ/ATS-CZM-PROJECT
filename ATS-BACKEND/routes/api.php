@@ -25,10 +25,10 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::get('settings/permissions', [SettingsController::class, 'getPermissions']);
         Route::post('logout', [AuthController::class, 'logout']);
 
-        // Companies / BUs - admin only
-        Route::get('companies', [CompanyController::class, 'index'])->middleware('role:admin');
+        // Companies / BUs - admin and recruiter_lead can view, admin only can modify
+        Route::get('companies', [CompanyController::class, 'index'])->middleware('role:admin,recruiter_lead,hr_manager,hr_supervisor');
         Route::post('companies', [CompanyController::class, 'store'])->middleware('role:admin');
-        Route::get('companies/{company}', [CompanyController::class, 'show'])->middleware('role:admin');
+        Route::get('companies/{company}', [CompanyController::class, 'show'])->middleware('role:admin,recruiter_lead,hr_manager,hr_supervisor');
         Route::put('companies/{company}', [CompanyController::class, 'update'])->middleware('role:admin');
         Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->middleware('role:admin');
         Route::post('companies/{company}/assign', [CompanyController::class, 'assignUser'])->middleware('role:admin');
