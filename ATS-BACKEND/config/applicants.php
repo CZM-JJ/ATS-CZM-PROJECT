@@ -47,7 +47,7 @@ return [
         'canEdit' => ['admin', 'hr_supervisor', 'recruiter', 'recruiter_lead'],
         'canDelete' => ['admin', 'hr_supervisor', 'recruiter', 'recruiter_lead'],
         'canViewAnalytics' => ['admin', 'hr_supervisor'],
-        'canManagePositions' => ['admin', 'hr_supervisor'],
+        'canManagePositions' => ['admin', 'hr_supervisor', 'recruiter_lead'],
         'canManageUsers' => ['admin'],
     ],
 
