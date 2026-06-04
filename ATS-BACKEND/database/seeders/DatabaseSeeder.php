@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(AdminUserSeeder::class);
-        $this->call(CompanyBUMappingSeeder::class);
+        $this->call(CompanySeeder::class);
 
         User::updateOrCreate(
             ['email' => 'recruiter@example.com'],
