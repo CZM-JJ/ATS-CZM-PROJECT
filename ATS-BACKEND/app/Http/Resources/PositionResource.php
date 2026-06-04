@@ -17,6 +17,7 @@ class PositionResource extends JsonResource
             'salary_max' => $this->salary_max,
             'is_active' => $this->is_active,
             'company_id' => $this->company_id,
+            'company' => new CompanyResource($this->whenLoaded('company')),
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
