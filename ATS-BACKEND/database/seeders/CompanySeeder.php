@@ -14,7 +14,7 @@ class CompanySeeder extends Seeder
         $allCompanies = [
             'CZM', 'TRRG', 'FRVG', 'Acro Petroleum', 'Riyonce', 'Sapporo', 'TSW',
             'T12', 'Acro Residences', 'Acro Ice', 'Dimes Sports', 'CWCKing Realty',
-            'Basic Petroleum', 'CZM Logistics'
+            'Basic Petroleum', 'CZM Logistics', 'Agrihub'
         ];
 
         foreach ($allCompanies as $name) {
