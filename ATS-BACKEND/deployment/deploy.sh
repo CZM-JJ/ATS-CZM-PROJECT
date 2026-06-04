@@ -13,6 +13,8 @@ PROJECT_ROOT=$(pwd)
 echo "==> Project Root: $PROJECT_ROOT"
 
 echo "==> Pulling latest code from GitHub..."
+# Fix "dubious ownership" error for the current user (including root)
+git config --global --add safe.directory "$PROJECT_ROOT"
 git pull origin main
 
 # ------------------------------------------------------------
@@ -39,6 +41,7 @@ if [ -d "ATS-BACKEND" ]; then
     cd ATS-BACKEND
     echo "Installing Composer dependencies..."
     composer install --no-dev --optimize-autoloader
+    composer dump-autoload
 
     echo "Caching configuration and routes..."
     php artisan config:cache
