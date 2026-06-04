@@ -208,7 +208,10 @@ class PositionController extends Controller
         ]);
 
         $oldStatus = $position->is_active ? 'active' : 'inactive';
-        $position->update($data);
+        $position->update([
+            'is_active' => $data['is_active'],
+            'status' => $data['is_active'] ? 'active' : 'inactive',
+        ]);
         $newStatus = $position->is_active ? 'active' : 'inactive';
 
         AuditLog::log('update', 'position', $position->id, $position->title,

@@ -42,6 +42,7 @@ function AdminPage() {
   const [statusSaving, setStatusSaving] = useState(false)
   const detailRef = useRef(null)
   const listItemRefs = useRef({})
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   const anyConfirmModalOpen = !!deleteTarget || !!restoreTarget || !!forceTarget
 
@@ -53,6 +54,22 @@ function AdminPage() {
       document.body.style.overflow = originalOverflow
     }
   }, [anyConfirmModalOpen])
+
+  useEffect(() => {
+    // prevent background scroll when mobile sidebar is open
+    const original = document.body.style.overflow
+    if (mobileSidebarOpen) document.body.style.overflow = 'hidden'
+    else document.body.style.overflow = original
+    return () => { document.body.style.overflow = original }
+  }, [mobileSidebarOpen])
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 860 && mobileSidebarOpen) setMobileSidebarOpen(false)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [mobileSidebarOpen])
 
   useEffect(() => {
     if (!anyConfirmModalOpen) return
@@ -670,6 +687,15 @@ function AdminPage() {
             </span>
           </div>
           <div className="admin-card-head-actions">
+            <button
+              type="button"
+              className="admin-sidebar-toggle"
+              aria-controls="admin-sidebar"
+              aria-expanded={mobileSidebarOpen}
+              onClick={() => setMobileSidebarOpen((s) => !s)}
+            >
+              {mobileSidebarOpen ? 'Close list' : 'Open list'}
+            </button>
             <div className="admin-mode-switch" role="tablist" aria-label="Pipeline mode">
               <button
                 type="button"
@@ -702,10 +728,23 @@ function AdminPage() {
           </div>
         ) : null}
         <div className="admin-layout">
-          <aside className="admin-panel admin-sidebar">
+          {mobileSidebarOpen ? (
+            <div className="admin-sidebar-backdrop" onClick={() => setMobileSidebarOpen(false)} />
+          ) : null}
+          <aside id="admin-sidebar" className={`admin-panel admin-sidebar ${mobileSidebarOpen ? 'mobile-open' : 'mobile-hidden'}`}>
             <div className="admin-panel-head">
-              <h4>{viewMode === 'active' ? 'Pipeline' : 'Archive'}</h4>
-              {loadingApplicants ? <span>Loading...</span> : <span>Total Records: {total}</span>}
+                <h4>{viewMode === 'active' ? 'Pipeline' : 'Archive'}</h4>
+                {loadingApplicants ? <span>Loading...</span> : <span>Total Records: {total}</span>}
+                {mobileSidebarOpen ? (
+                  <button
+                    type="button"
+                    className="admin-sidebar-close"
+                    aria-label="Close list"
+                    onClick={() => setMobileSidebarOpen(false)}
+                  >
+                    Close
+                  </button>
+                ) : null}
             </div>
             <div className="admin-filters">
               <input
@@ -781,7 +820,10 @@ function AdminPage() {
                   <button
                     type="button"
                     className={`admin-list-item ${item.id === selectedId ? 'active' : ''}`}
-                    onClick={() => setSelectedId(item.id)}
+                    onClick={() => {
+                      setSelectedId(item.id)
+                      if (typeof window !== 'undefined' && window.innerWidth <= 860) setMobileSidebarOpen(false)
+                    }}
                     ref={(el) => {
                       if (el) listItemRefs.current[item.id] = el
                       else delete listItemRefs.current[item.id]
