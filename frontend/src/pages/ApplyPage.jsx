@@ -9,6 +9,7 @@ import {
   VACANCY_SOURCE_OPTIONS,
   CIVIL_STATUS_OPTIONS,
 } from '../utils/constants'
+import PositionSelector from '../components/PositionSelector'
 import { extractXhrError, formatText } from '../utils/helpers'
 
 const initialForm = {
@@ -227,7 +228,7 @@ function ApplyPage() {
       try {
         const payload = await positionAPI.getPublic()
         if (isMounted) {
-          setPositions(payload)
+          setPositions(Array.isArray(payload) ? payload : (payload?.data ?? []))
           setPositionsError(null)
         }
       } catch {
@@ -508,22 +509,13 @@ function ApplyPage() {
                   {positionsLoading ? (
                     <div className="skeleton h-11 w-full" />
                   ) : positions.length > 0 ? (
-                    <select
-                      name="position_applied_for"
+                    <PositionSelector
                       value={form.position_applied_for}
                       onChange={handleChange}
+                      positions={positions}
+                      placeholder="Select position..."
                       required
-                      className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
-                    >
-                      {[{ value: '', label: 'Select' }, ...positions.map((position) => ({
-                        value: position.title,
-                        label: position.title
-                      }))].map((option) => (
-                        <option key={`position-${option.value || 'empty'}`} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   ) : (
                     <input
                       name="position_applied_for"

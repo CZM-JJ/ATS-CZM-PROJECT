@@ -142,7 +142,7 @@ function AdminPositionsPage() {
   const loadCompanies = async () => {
     try {
       const payload = await companyAPI.getAll(token)
-      setCompanies(payload)
+      setCompanies(Array.isArray(payload) ? payload : (payload?.data ?? []))
     } catch (e) {
       console.error('Failed to load companies', e)
     }
@@ -194,7 +194,7 @@ function AdminPositionsPage() {
       location: position.location ?? '',
       salary_min: position.salary_min ?? '',
       salary_max: position.salary_max ?? '',
-      company_id: position.company_id ?? '',
+      company_id: position.company_id != null ? String(position.company_id) : '',
       is_active: position.is_active ?? true,
     })
     setFormError(null)
@@ -224,14 +224,14 @@ function AdminPositionsPage() {
         location: form.location.trim(),
         salary_min: form.salary_min !== '' ? Number(form.salary_min) : null,
         salary_max: form.salary_max !== '' ? Number(form.salary_max) : null,
-        company_id: form.company_id,
+        company_id: form.company_id ? Number(form.company_id) : null,
         is_active: form.is_active,
       }
       const saved = editing
         ? await positionAPI.update(token, editing.id, body)
         : await positionAPI.create(token, body)
       if (editing) {
-        setPositions((prev) => prev.map((p) => (p.id === saved.id ? saved : p)))
+        setPositions((prev) => prev.map((p) => (p.id === saved.id ? mergePosition(p, saved) : p)))
       } else {
         setPositions((prev) => [saved, ...prev])
         setTotal((t) => t + 1)
@@ -248,7 +248,7 @@ function AdminPositionsPage() {
     setTogglingId(position.id)
     try {
       const updated = await positionAPI.toggle(token, position.id, !position.is_active)
-      setPositions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      setPositions((prev) => prev.map((p) => (p.id === updated.id ? mergePosition(p, updated) : p)))
     } catch {
       setError('Failed to toggle status.')
     } finally {
@@ -275,6 +275,19 @@ function AdminPositionsPage() {
       setDeleting(false)
     }
   }
+
+  const resolveCompanyName = (position) => {
+    if (position?.company?.name) return position.company.name
+    const companyId = Number(position?.company_id)
+    if (!companyId) return null
+    return companies.find((c) => Number(c.id) === companyId)?.name ?? null
+  }
+
+  const mergePosition = (previous, next) => ({
+    ...previous,
+    ...next,
+    company: next.company ?? previous.company,
+  })
 
   const formatSalary = (min, max) => {
     if (!min && !max) return '—'
@@ -436,8 +449,13 @@ function AdminPositionsPage() {
                     </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#0f2c20' }}>{pos.title}</div>
+                      {(resolveCompanyName(pos) || pos.location) ? (
+                        <div className="pos-row-meta">
+                          {[resolveCompanyName(pos), pos.location].filter(Boolean).join(' · ')}
+                        </div>
+                      ) : null}
                     </td>
-                    <td className="pos-col-company">{pos.company?.name || '—'}</td>
+                    <td className="pos-col-company">{resolveCompanyName(pos) || '—'}</td>
                     <td className="pos-col-location">{pos.location}</td>
                     <td className="pos-col-salary">{formatSalary(pos.salary_min, pos.salary_max)}</td>
                     <td>
@@ -571,7 +589,7 @@ function AdminPositionsPage() {
                     >
                       <option value="">Select company</option>
                       {companies.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <option key={c.id} value={String(c.id)}>{c.name}</option>
                       ))}
                     </select>
                   </div>

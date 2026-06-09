@@ -72,6 +72,7 @@ class PositionController extends Controller
     public function publicIndex()
     {
         return PositionResource::collection(Position::query()
+            ->with('company')
             ->where('is_active', true)
             ->orderBy('title')
             ->get());
@@ -80,6 +81,7 @@ class PositionController extends Controller
     public function all()
     {
         return PositionResource::collection(Position::query()
+            ->with('company')
             ->orderBy('title')
             ->get());
     }
@@ -161,7 +163,7 @@ class PositionController extends Controller
             abort(403, 'You are not authorized to view positions for this company.');
         }
 
-        return new PositionResource($position);
+        return new PositionResource($position->load('company'));
     }
 
     public function update(Request $request, Position $position)
@@ -217,7 +219,7 @@ class PositionController extends Controller
         AuditLog::log('update', 'position', $position->id, $position->title,
             "Changed status from {$oldStatus} to {$newStatus}");
 
-        return new PositionResource($position);
+        return new PositionResource($position->load('company'));
     }
 
     private function validatePosition(Request $request, bool $isUpdate = false): array
