@@ -456,7 +456,7 @@ class ApplicantController extends Controller
             'email_address' => [$required, 'email', 'max:255'],
             'expected_salary' => ['nullable', 'numeric', 'min:0'],
             'preferred_work_location' => [$required, 'string', 'max:255'],
-            'upload_cv' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'upload_cv' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
             'vacancy_source' => ['nullable', 'string', 'max:255'],
             'status' => $isUpdate
                 ? ['sometimes', 'string', Rule::in($this->allowedStatuses())]
