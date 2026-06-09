@@ -90,8 +90,12 @@ export default function PositionSelector({
     const seen = new Set()
     const unique = []
     for (const pos of filtered) {
-      if (!seen.has(pos.title)) {
-        seen.add(pos.title)
+      const companyName = pos.company?.name || pos.company || ''
+      const location = pos.location || ''
+      const uniqueKey = `${pos.title}|${companyName}|${location}`
+
+      if (!seen.has(uniqueKey)) {
+        seen.add(uniqueKey)
         unique.push(pos)
       }
     }
