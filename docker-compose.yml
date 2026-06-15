@@ -1,0 +1,151 @@
+services:
+  # PHP Laravel Application
+  app:
+    build:
+      context: ./ATS-BACKEND
+      dockerfile: Dockerfile
+    container_name: ats-app
+    restart: unless-stopped
+    working_dir: /var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8000
+      - FRONTEND_URL=http://localhost:5173
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=ats_db
+      - DB_USERNAME=ats_user
+      - DB_PASSWORD=secret
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=database
+      - SESSION_ENCRYPT=true
+      - SESSION_SECURE_COOKIE=false
+      - SESSION_SAME_SITE=lax
+      - SESSION_HTTP_ONLY=true
+      - SANCTUM_STATEFUL_DOMAINS=localhost,127.0.0.1
+      - SEED_ADMIN_EMAIL=admin@example.com
+      - SEED_ADMIN_PASSWORD=password
+    volumes:
+      - ./ATS-BACKEND:/var/www
+      - ./ATS-BACKEND/storage/logs:/var/www/storage/logs
+    networks:
+      - ats-network
+    depends_on:
+      - mysql
+      - redis
+    command: php-fpm
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: ats-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    depends_on:
+      - app
+    volumes:
+      - ./ATS-BACKEND:/var/www:ro
+      - ./ATS-BACKEND/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - ats-network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: ats-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ats_db
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: ats_user
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - ats-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ats-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ats-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 10
+
+  worker:
+    build:
+      context: ./ATS-BACKEND
+      dockerfile: Dockerfile
+    container_name: ats-worker
+    restart: unless-stopped
+    working_dir: /var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=ats_db
+      - DB_USERNAME=ats_user
+      - DB_PASSWORD=secret
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=redis
+    volumes:
+      - ./ATS-BACKEND:/var/www
+    depends_on:
+      - mysql
+      - redis
+    command: php artisan queue:work redis --sleep=3 --tries=3 --timeout=90
+    networks:
+      - ats-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ats-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - ats-network
+    depends_on:
+      - nginx
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ats-network:
+    driver: bridge
