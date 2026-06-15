@@ -26,7 +26,7 @@ export const requestJson = async (url, options = {}, errorMessage = 'Request fai
 
   if (!res.ok) {
     const serverMsg = data && data.message ? data.message : errorMessage
-    const error = new Error(`${serverMsg}${res.status ? ` (${res.status} ${res.statusText})` : ''}`)
+    const error = new Error(serverMsg)
     error.status = res.status
     error.response = res
     throw error

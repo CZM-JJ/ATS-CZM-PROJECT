@@ -8,30 +8,36 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(() => {
     if (typeof window === 'undefined') return null
-    return window.localStorage.getItem('ats_token') || null
+    return window.localStorage.getItem('ats_token') || window.sessionStorage.getItem('ats_token') || null
   })
   const [isLoading, setIsLoading] = useState(true)
   const [permissions, setPermissions] = useState(PERMISSION_DEFAULTS)
 
+  const getStorage = () => {
+    if (typeof window === 'undefined') return null
+    return window.localStorage.getItem('ats_remember_me') === 'true'
+      ? window.localStorage
+      : window.sessionStorage
+  }
 
   const refresh = async (overrideToken = null) => {
     setIsLoading(true)
     const currentToken = overrideToken || token
-    
-    // Don't attempt to fetch user data if there's no token
+
     if (!currentToken) {
       setUser(null)
       setPermissions(PERMISSION_DEFAULTS)
       setIsLoading(false)
       return
     }
-    
+
     try {
       const profile = await authAPI.getCurrentUser(currentToken)
       setUser(profile)
       if (profile?.token && profile.token !== currentToken) {
         setToken(profile.token)
-        window.localStorage.setItem('ats_token', profile.token)
+        const storage = getStorage() || window.localStorage
+        storage.setItem('ats_token', profile.token)
       }
 
       const perms = await authAPI.getPermissions(currentToken).catch(() => null)
@@ -41,6 +47,7 @@ export function AuthProvider({ children }) {
       setUser(null)
       setToken(null)
       window.localStorage.removeItem('ats_token')
+      window.sessionStorage.removeItem('ats_token')
       setPermissions(PERMISSION_DEFAULTS)
     } finally {
       setIsLoading(false)
@@ -49,14 +56,15 @@ export function AuthProvider({ children }) {
 
   useLayoutEffect(() => {
     refresh()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const login = async (credentials) => {
+  const login = async (credentials, remember = false) => {
     const result = await authAPI.login(credentials)
     const newToken = result?.token || result?.access_token || result?.data?.token || null
     if (newToken) {
-      window.localStorage.setItem('ats_token', newToken)
+      window.localStorage.setItem('ats_remember_me', remember ? 'true' : 'false')
+      const storage = remember ? window.localStorage : window.sessionStorage
+      storage.setItem('ats_token', newToken)
       setToken(newToken)
       await refresh(newToken)
     } else {
@@ -69,6 +77,8 @@ export function AuthProvider({ children }) {
     setUser(null)
     setToken(null)
     window.localStorage.removeItem('ats_token')
+    window.localStorage.removeItem('ats_remember_me')
+    window.sessionStorage.removeItem('ats_token')
     setPermissions(PERMISSION_DEFAULTS)
   }
 

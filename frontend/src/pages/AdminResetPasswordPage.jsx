@@ -14,16 +14,23 @@ function getStrength(pw) {
 function StrengthBar({ password }) {
   const score = getStrength(password)
   const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-  const colors = ['', '#e53e3e', '#d97706', '#2563eb', '#16a34a']
+  const colors = ['bg-gray-200', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-emerald-500']
+
   if (!password) return null
+
   return (
-    <div className="rp-strength">
-      <div className="rp-strength-bars">
+    <div className="mt-2">
+      <div className="flex gap-1 mb-1">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="rp-strength-bar" style={{ background: i <= score ? colors[score] : '#e2e8f0' }} />
+          <div
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i <= score ? colors[score] : 'bg-gray-200'}`}
+          />
         ))}
       </div>
-      <span className="rp-strength-label" style={{ color: colors[score] }}>{labels[score]}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500" style={{ color: score > 0 ? colors[score].replace('bg-', '') : '' }}>
+        {labels[score]}
+      </span>
     </div>
   )
 }
@@ -60,92 +67,109 @@ function AdminResetPasswordPage() {
   }
 
   return (
-    <div className="rp-shell">
-      {/* Left visual panel */}
-      <div className="rp-visual">
-        <div className="rp-orb rp-orb-1" />
-        <div className="rp-orb rp-orb-2" />
-        <div className="rp-visual-content">
-          <div className="rp-logo-wrap">
-            <img src="/logoczark.png" alt="Czark Mak" className="rp-logo" />
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+      {/* Left Side: Branding & Illustration */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0f3d2e] relative overflow-hidden items-center justify-center p-12 text-white">
+        <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-emerald-800 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-80 h-80 bg-[#B8860B] rounded-full blur-3xl opacity-30"></div>
+
+        <div className="relative z-10 max-w-lg text-center">
+          <img
+            src="/LOGO_CZM MAIN 01.png"
+            alt="Czark Mak Corporation"
+            className="w-24 h-24 mx-auto mb-8 object-contain brightness-0 invert"
+          />
+          <h1 className="text-5xl font-extrabold mb-6 leading-tight">
+            Secure Your <br />
+            <span className="text-[#D4AF37]">Digital Vault</span>
+          </h1>
+          <p className="text-emerald-100 text-lg mb-8 leading-relaxed opacity-90">
+            Create a strong password to protect your administrative access.
+            Your security is our priority.
+          </p>
+          <div className="flex justify-center gap-4">
+             <div className="px-4 py-2 bg-[#D4AF37]/10 rounded-full text-xs font-medium backdrop-blur-sm border border-[#D4AF3 own-S la de 30 text-[#D4AF37]">
+               ✓ High Entropy
+             </div>
+             <div className="px-4 py-2 bg-[#D4AF37]/10 rounded-full text-xs font-medium backdrop-blur-sm border border-[#D4AF37]/30 text-[#D4AF37]">
+               ✓ End-to-End Encrypted
+             </div>
           </div>
-          <h2 className="rp-visual-title">Secure your account</h2>
-          <p className="rp-visual-sub">Choose a strong password to protect your ATS account.</p>
-          <ul className="rp-tips">
-            <li><span className="rp-tip-icon">✓</span> At least 8 characters</li>
-            <li><span className="rp-tip-icon">✓</span> One uppercase letter</li>
-            <li><span className="rp-tip-icon">✓</span> One number</li>
-            <li><span className="rp-tip-icon">✓</span> One special character</li>
-          </ul>
         </div>
       </div>
 
-      {/* Right form panel */}
-      <div className="rp-form-panel">
-        <div className="rp-form-wrap">
+      {/* Right Side: Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16 bg-white">
+        <div className="w-full max-w-md relative">
+          <div className="absolute -top-2 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-60"></div>
+
+          <div className="text-left lg:text-center mb-10 lg:hidden">
+             <img src="/LOGO_CZM MAIN 01.png" alt="Logo" className="w-16 h-16 mx-auto mb-4" />
+             <h2 className="text-2xl font-bold text-gray-800">Reset Password</h2>
+          </div>
+
+          <div className="hidden lg:block text-center mb-10">
+             <h2 className="text-3xl font-bold text-gray-900 mb-2">Create New Password</h2>
+             <p className="text-gray-500">Setting new password for <strong className="text-gray-800">{email || 'your account'}</strong></p>
+             <div className="w-12 h-1 bg-[#D4AF37] mx-auto mt-4 rounded-full"></div>
+          </div>
+
           {done ? (
-            <div className="rp-success-state">
-              <div className="rp-success-icon-wrapper">
-                <div className="rp-success-icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
-                </div>
+            <div className="text-center animate-in fade-in zoom-in duration-300">
+              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600 border-2 border-emerald-100 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
               </div>
-              <h2 className="rp-success-title">Password Updated!</h2>
-              <p className="rp-success-text">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Password Updated!</h3>
+              <p className="text-gray-500 mb-8">
                 Your password has been changed successfully.<br />Redirecting you to sign in...
               </p>
-              <div className="rp-redirect-bar"><div className="rp-redirect-fill" /></div>
-              <NavLink to="/admin/login" className="rp-back-link">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-                </svg>
-                Go to Sign In
+              <NavLink
+                to="/admin/login"
+                className="inline-block px-6 py-2 rounded-lg border border-gray-300 text-gray-600 font-semibold hover:bg-gray-50 transition-all"
+              >
+                Go to Sign In Now
               </NavLink>
             </div>
           ) : (
             <>
-              <div className="rp-form-header">
-                <div className="rp-form-icon-wrapper">
-                  <div className="rp-form-icon">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                  </div>
+              {error && (
+                <div className="mb-6 py-3 px-4 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.5.5 0 01.5.5 .5.5 0 01-.5.5 0 01-.5-.5 0 01.5-.5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-medium">{error}</span>
                 </div>
-                <h1 className="rp-form-title">Reset Password</h1>
-                <p className="rp-form-sub">Setting new password for <strong>{email || 'your account'}</strong></p>
-              </div>
+              )}
 
-              <form onSubmit={handleSubmit} className="rp-form">
-                {/* New password */}
-                <div className="rp-field">
-                  <label className="rp-label" htmlFor="rp-password">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-[#B8860B] transition-colors">
                     New Password
-                    <span className="rp-required">*</span>
                   </label>
-                  <div className="rp-input-wrap">
-                    <svg className="rp-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                  <div className="relative">
                     <input
-                      id="rp-password"
-                      className="rp-input"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="Enter new password"
                       required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#D4AF37] focus:border-[#D4AF37] outline-none transition-all placeholder:text-gray-400"
                     />
-                    <button type="button" className="rp-eye-btn" onClick={() => setShowPassword(p => !p)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-[#B8860B] transition-colors"
+                    >
                       {showPassword ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243-4.243m-4.243 4.243l.5-1.5m0 0l.5 1.5m-1-1.5h.01" />
                         </svg>
                       ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z" />
                         </svg>
                       )}
                     </button>
@@ -153,89 +177,63 @@ function AdminResetPasswordPage() {
                   <StrengthBar password={password} />
                 </div>
 
-                {/* Confirm password */}
-                <div className="rp-field">
-                  <label className="rp-label" htmlFor="rp-confirm">
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-[#B8860B] transition-colors">
                     Confirm Password
-                    <span className="rp-required">*</span>
                   </label>
-                  <div className="rp-input-wrap">
-                    <svg className="rp-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                  <div className="relative">
                     <input
-                      id="rp-confirm"
-                      className={`rp-input ${
-                        confirmPassword && confirmPassword !== password ? 'rp-input-mismatch'
-                        : confirmPassword && confirmPassword === password ? 'rp-input-match' : ''
-                      }`}
                       type={showConfirm ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
                       placeholder="Confirm your password"
                       required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#D4AF37] focus:border-[#D4AF37] outline-none transition-all placeholder:text-gray-400"
                     />
-                    <button type="button" className="rp-eye-btn" onClick={() => setShowConfirm(p => !p)} aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-[#B8860B] transition-colors"
+                    >
                       {showConfirm ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243-4.243m-4.243 4.243l.5-1.5m0 0l.5 1.5m-1-1.5h.01" />
                         </svg>
                       ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z" />
                         </svg>
                       )}
                     </button>
                   </div>
-                  {confirmPassword && confirmPassword !== password && (
-                    <span className="rp-match-hint rp-match-hint--err">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                      </svg>
-                      Passwords do not match
-                    </span>
-                  )}
-                  {confirmPassword && confirmPassword === password && (
-                    <span className="rp-match-hint rp-match-hint--ok">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      Passwords match
-                    </span>
-                  )}
                 </div>
 
-                {error && (
-                  <div className="rp-alert rp-alert-error" role="alert">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" className="rp-submit" disabled={loading}>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full py-3.5 rounded-xl text-white font-bold transition-all ${
+                    loading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-[#0f3d2e] hover:bg-[#14523f] active:scale-[0.98] shadow-lg shadow-emerald-900/20 border-b-4 border-[#D4AF37]'
+                  }`}
+                >
                   {loading ? (
-                    <>
-                      <span className="rp-spinner" aria-hidden="true" />
-                      Updating password...
-                    </>
-                  ) : (
-                    <>
-                      Update Password
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018 8V12H4z"></path>
                       </svg>
-                    </>
-                  )}
+                      Updating password...
+                    </span>
+                  ) : 'Update Password'}
                 </button>
 
-                <NavLink to="/admin/login" className="rp-back-link">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
-                  </svg>
-                  Back to Sign In
-                </NavLink>
+                <div className="text-center">
+                  <NavLink to="/admin/login" className="text-sm font-semibold text-[#B8860B] hover:text-[#D4AF37] transition-colors hover:underline">
+                    ← Back to Sign In
+                  </NavLink>
+                </div>
               </form>
             </>
           )}
