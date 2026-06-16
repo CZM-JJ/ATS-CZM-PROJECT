@@ -26,12 +26,6 @@ class AdminResetPasswordNotification extends Notification
 
         return (new MailMessage)
             ->subject('Password Reset Request - Czark Mak Corporation')
-            ->greeting('Hello,')
-            ->line('You are receiving this email because we received a request to reset the password associated with your account.')
-            ->line('To proceed with resetting your password, please click the button below:')
-            ->action('Reset Password', $resetUrl)
-            ->line('For your security, this link is temporary and will expire shortly.')
-            ->line('If you did not request a password reset, please ignore this email. No changes will be made to your account.')
-            ->salutation('Best regards,**\n\nCzark Mak IT Support');
+            ->view('emails.reset_password', ['url' => $resetUrl]);
     }
 }
