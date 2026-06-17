@@ -92,12 +92,15 @@ export const ROLE_MAP = Object.fromEntries(ROLE_OPTIONS.map(r => [r.value, r]))
 // ============================================================================
 export const EDUCATION_OPTIONS = [
   { value: '', label: 'Select' },
-  { value: 'Elementary', label: 'Elementary' },
+  { value: 'Elementary school', label: 'Elementary school' },
   { value: 'High School', label: 'High School' },
-  { value: 'Senior High', label: 'Senior High' },
+  { value: 'Senior high school', label: 'Senior high school' },
   { value: 'Vocational', label: 'Vocational' },
-  { value: 'College', label: 'College' },
-  { value: 'Post Grad', label: 'Post Grad' },
+  { value: 'College undergraduate', label: 'College undergraduate' },
+  { value: 'Bachelor\'s degree', label: 'Bachelor\'s degree' },
+  { value: 'Master\'s degree', label: 'Master\'s degree' },
+  { value: 'Doctorate', label: 'Doctorate' },
+  { value: 'Post Graduate', label: 'Post Graduate' },
 ]
 
 export const GENDER_OPTIONS = [

@@ -825,12 +825,15 @@ function AdminApplicantsPage() {
                 <span>Education</span>
                 <select className="select select-bordered" value={educationFilter} onChange={(e) => setEducationFilter(e.target.value)}>
                   <option value="">Any</option>
-                  <option>Elementary</option>
+                  <option>Elementary school</option>
                   <option>High School</option>
-                  <option>Senior High</option>
+                  <option>Senior high school</option>
                   <option>Vocational</option>
-                  <option>College</option>
-                  <option>Post Grad</option>
+                  <option>College undergraduate</option>
+                  <option>Bachelor's degree</option>
+                  <option>Master's degree</option>
+                  <option>Doctorate</option>
+                  <option>Post Graduate</option>
                 </select>
               </label>
               <label>

@@ -14,7 +14,7 @@ class ApplicantFactory extends Factory
 
     public function definition(): array
     {
-        $educationLevels = ['Elementary', 'High School', 'Senior High', 'Vocational', 'College', 'Post Grad'];
+        $educationLevels = ['Elementary school', 'High School', 'Senior high school', 'Vocational', 'College undergraduate', 'Bachelor\'s degree', 'Master\'s degree', 'Doctorate', 'Post Graduate'];
 
         return [
             'position_applied_for' => $this->faker->jobTitle(),
