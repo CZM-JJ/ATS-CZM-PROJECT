@@ -152,24 +152,40 @@ function ApplyPage() {
     setForm((previous) => ({ ...previous, [name]: value }))
   }
 
+  const CV_MAX_BYTES = 10 * 1024 * 1024 // 10 MB — must match server-side validation
+  const CV_ACCEPT_PATTERN = /\.(pdf|doc|docx)$/i
+
   const handleFileChange = (event) => {
     const [file] = event.target.files || []
-    if (file && /\.(pdf|doc|docx)$/i.test(file.name)) {
-      setCvFile(file)
-      setError(null)
+    if (!file) return
+    if (!CV_ACCEPT_PATTERN.test(file.name)) {
+      setError('Please upload a PDF, DOC, or DOCX file.')
+      return
     }
+    if (file.size > CV_MAX_BYTES) {
+      setError(`File is too large (${formatFileSize(file.size)}). Max 10 MB.`)
+      event.target.value = ''
+      return
+    }
+    setCvFile(file)
+    setError(null)
   }
 
   const handleDrop = (event) => {
     event.preventDefault()
     setDragOver(false)
     const [file] = event.dataTransfer?.files || []
-    if (file && /\.(pdf|doc|docx)$/i.test(file.name)) {
-      setCvFile(file)
-      setError(null)
-    } else if (file) {
+    if (!file) return
+    if (!CV_ACCEPT_PATTERN.test(file.name)) {
       setError('Please upload a PDF, DOC, or DOCX file.')
+      return
     }
+    if (file.size > CV_MAX_BYTES) {
+      setError(`File is too large (${formatFileSize(file.size)}). Max 10 MB.`)
+      return
+    }
+    setCvFile(file)
+    setError(null)
   }
 
   const handleDragOver = (event) => {
@@ -314,7 +330,14 @@ function ApplyPage() {
       })
 
       if (xhr.status < 200 || xhr.status >= 300) {
-        const errorMsg = extractXhrError(xhr) || `Server error (${xhr.status})`
+        let errorMsg = extractXhrError(xhr) || `Server error (${xhr.status})`
+        if (xhr.status === 413) {
+          errorMsg = 'Your file is too large. The CV must be 10 MB or smaller.'
+        } else if (xhr.status === 422) {
+          errorMsg = errorMsg || 'Some fields are invalid. Please review the form and try again.'
+        } else if (xhr.status >= 500) {
+          errorMsg = 'The server hit an error while saving your application. Please try again, and contact us if the problem persists.'
+        }
         setError(errorMsg)
         return
       }
@@ -488,7 +511,7 @@ function ApplyPage() {
                     <>
                       <span className="resume-drop-icon">📎</span>
                       <p className="resume-drop-text">Drop your resume here or click to browse</p>
-                      <p className="resume-drop-hint">PDF, DOC, or DOCX — max 5 MB</p>
+                      <p className="resume-drop-hint">PDF, DOC, or DOCX — max 10 MB</p>
                     </>
                   )}
                 </div>

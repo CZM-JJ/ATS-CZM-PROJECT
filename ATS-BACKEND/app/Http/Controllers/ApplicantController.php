@@ -46,6 +46,23 @@ class ApplicantController extends Controller
 
     public function storePublic(Request $request): JsonResponse
     {
+        // PHP silently drops the whole POST body when it exceeds post_max_size —
+        // in that case $request->all() is empty and we'd return a confusing
+        // "field required" error. Detect it up front and return a clear message.
+        $postMaxBytes = $this->parseSize(ini_get('post_max_size'));
+        $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+        if ($postMaxBytes > 0 && $contentLength > 0 && $contentLength > $postMaxBytes) {
+            Log::warning('Public applicant submission rejected: POST body exceeds post_max_size', [
+                'content_length' => $contentLength,
+                'post_max_size' => $postMaxBytes,
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json([
+                'message' => 'Your submission is too large. Please reduce the file size (CV must be 10 MB or smaller) and try again.',
+            ], 413);
+        }
+
         $antiSpamResponse = $this->runPublicAntiSpamChecks($request);
         if ($antiSpamResponse !== null) {
             return $antiSpamResponse;
@@ -55,6 +72,29 @@ class ApplicantController extends Controller
         $applicant = $this->createApplicant($request, true, true);
 
         return (new ApplicantResource($applicant))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Parse a PHP ini-style size string like "10M" / "1024K" / "2G" into bytes.
+     * Returns 0 if the value is empty or unparseable.
+     */
+    private function parseSize(?string $value): int
+    {
+        if ($value === null) {
+            return 0;
+        }
+        $value = trim($value);
+        if ($value === '') {
+            return 0;
+        }
+        $unit = strtolower(substr($value, -1));
+        $number = (int) $value;
+        return match ($unit) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 
     public function show(Applicant $applicant)
@@ -436,6 +476,12 @@ class ApplicantController extends Controller
     {
         $required = $isUpdate ? 'sometimes|required' : 'required';
 
+        $messages = [
+            'upload_cv.max' => 'The CV file must not be larger than 10 MB.',
+            'upload_cv.mimes' => 'The CV must be a PDF, DOC, or DOCX file.',
+            'upload_cv.file' => 'The CV upload is invalid. Please try a different file.',
+        ];
+
         return $request->validate([
             'position_applied_for' => [$required, 'string', 'max:255'],
             'last_name' => [$required, 'string', 'max:255'],
@@ -461,7 +507,7 @@ class ApplicantController extends Controller
             'status' => $isUpdate
                 ? ['sometimes', 'string', Rule::in($this->allowedStatuses())]
                 : ['prohibited'],
-        ]);
+        ], $messages);
     }
 
     private function runPublicAntiSpamChecks(Request $request): ?\Illuminate\Http\JsonResponse
@@ -475,9 +521,13 @@ class ApplicantController extends Controller
         if ($request->filled('website')) {
             $this->logPublicSpamBlock($request, 'honeypot_filled');
 
+            // Reject explicitly with 422 instead of fake-success — a silent 201
+            // caused confusion when bot-like submissions looked "submitted" in
+            // the UI but never created a row.
             return response()->json([
-                'message' => 'Your application has been submitted. We will update you after review through email.',
-            ], 201);
+                'message' => 'Submission rejected.',
+                'errors' => ['website' => ['Invalid submission.']],
+            ], 422);
         }
 
         $startedAt = (int) $request->input('form_started_at', 0);
@@ -491,8 +541,9 @@ class ApplicantController extends Controller
                 ]);
 
                 return response()->json([
-                    'message' => 'Your application has been submitted. We will update you after review through email.',
-                ], 201);
+                    'message' => 'Submission rejected.',
+                    'errors' => ['form_started_at' => ['Please take a moment to review the form before submitting.']],
+                ], 422);
             }
         }
 
@@ -547,7 +598,18 @@ class ApplicantController extends Controller
         }
 
         if ($request->hasFile('upload_cv')) {
-            $data['cv_path'] = $request->file('upload_cv')->store('cvs', $this->cvDisk());
+            try {
+                $data['cv_path'] = $request->file('upload_cv')->store('cvs', $this->cvDisk());
+            } catch (\Throwable $e) {
+                Log::error('CV upload to storage failed; applicant row will still be created', [
+                    'error' => $e->getMessage(),
+                    'disk' => $this->cvDisk(),
+                    'email' => $data['email_address'] ?? null,
+                ]);
+                // Don't let a storage failure drop the entire application —
+                // create the applicant row without a CV. HR can request a re-send.
+                $data['cv_path'] = null;
+            }
         }
 
         unset($data['upload_cv']);
