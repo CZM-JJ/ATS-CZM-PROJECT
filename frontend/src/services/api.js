@@ -277,6 +277,31 @@ export const noteAPI = {
       'Failed to create note'
     )
   },
+
+  update: async (token, applicantId, noteId, note) => {
+    return requestJson(
+      `${apiBase}/api/applicants/${applicantId}/notes/${noteId}`,
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildHeaders({ token, contentType: 'application/json' }),
+        body: JSON.stringify({ note }),
+      },
+      'Failed to update note'
+    )
+  },
+
+  delete: async (token, applicantId, noteId) => {
+    return requestJson(
+      `${apiBase}/api/applicants/${applicantId}/notes/${noteId}`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: buildHeaders({ token }),
+      },
+      'Failed to delete note'
+    )
+  },
 }
 
 // ============================================================================

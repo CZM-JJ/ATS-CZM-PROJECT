@@ -5032,6 +5032,116 @@ textarea {
   flex-wrap: wrap;
 }
 
+.admin-note-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.admin-note-list li:hover .admin-note-actions,
+.admin-note-list li:focus-within .admin-note-actions {
+  opacity: 1;
+}
+
+.admin-note-action-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(91, 107, 98, 0.18);
+  background: #fff;
+  color: #4b5a51;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-note-action-btn:hover {
+  background: rgba(15, 61, 46, 0.06);
+  color: #0f3d2e;
+  border-color: rgba(15, 61, 46, 0.25);
+}
+
+.admin-note-action-btn.admin-note-action-danger:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #b91c1c;
+  border-color: rgba(220, 53, 69, 0.35);
+}
+
+.admin-note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.admin-note-edit .admin-note-textarea {
+  min-height: 96px;
+  border: 1.5px solid rgba(200, 164, 65, 0.28);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.admin-note-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.admin-note-edit-cancel,
+.admin-note-edit-save {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s, background-color 0.15s;
+}
+
+.admin-note-edit-cancel {
+  background: transparent;
+  color: #4b5a51;
+  border-color: rgba(91, 107, 98, 0.3);
+}
+
+.admin-note-edit-cancel:hover:not(:disabled) {
+  background: rgba(91, 107, 98, 0.08);
+  color: #0f3d2e;
+}
+
+.admin-note-edit-save {
+  background: linear-gradient(135deg, #0f3d2e, #1a6644);
+  color: #f7f3ea;
+  box-shadow: 0 3px 10px rgba(15, 61, 46, 0.22);
+}
+
+.admin-note-edit-save:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(15, 61, 46, 0.28);
+}
+
+.admin-note-edit-cancel:disabled,
+.admin-note-edit-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.admin-note-edit-save .admin-note-spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(247, 243, 234, 0.35);
+  border-top-color: #f7f3ea;
+}
+
 .admin-empty {
   color: #4b5a51;
 }

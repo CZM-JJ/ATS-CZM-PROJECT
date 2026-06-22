@@ -23,6 +23,11 @@ function AdminPage() {
   const [notesError, setNotesError] = useState(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
+  const [editingNoteId, setEditingNoteId] = useState(null)
+  const [editingNoteText, setEditingNoteText] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [noteDeleteTarget, setNoteDeleteTarget] = useState(null)
+  const [deletingNote, setDeletingNote] = useState(false)
   const [page, setPage] = useState(1)
   const [lastPage, setLastPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -44,7 +49,7 @@ function AdminPage() {
   const listItemRefs = useRef({})
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  const anyConfirmModalOpen = !!deleteTarget || !!restoreTarget || !!forceTarget
+  const anyConfirmModalOpen = !!deleteTarget || !!restoreTarget || !!forceTarget || !!noteDeleteTarget
 
   useEffect(() => {
     if (!anyConfirmModalOpen) return
@@ -78,10 +83,11 @@ function AdminPage() {
       if (!deleting) setDeleteTarget(null)
       if (!restoring) setRestoreTarget(null)
       if (!forcing) setForceTarget(null)
+      if (!deletingNote) setNoteDeleteTarget(null)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [anyConfirmModalOpen, deleting, restoring, forcing])
+  }, [anyConfirmModalOpen, deleting, restoring, forcing, deletingNote])
 
   const loadApplicants = async (activeToken, filters = {}, preferredId = null) => {
     setLoadingApplicants(true)
@@ -204,6 +210,11 @@ function AdminPage() {
       URL.revokeObjectURL(resumeBlobUrl)
       setResumeBlobUrl(null)
     }
+
+    // Reset any in-progress note edit/delete state
+    setEditingNoteId(null)
+    setEditingNoteText('')
+    setNoteDeleteTarget(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, selectedId, viewMode])
 
@@ -267,6 +278,54 @@ function AdminPage() {
       setNotesError('Unable to save note.')
     } finally {
       setNoteSaving(false)
+    }
+  }
+
+  const startEditNote = (note) => {
+    setEditingNoteId(note.id)
+    setEditingNoteText(note.note || '')
+  }
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null)
+    setEditingNoteText('')
+  }
+
+  const saveEditedNote = async (note) => {
+    if (!selectedId) return
+    const trimmed = editingNoteText.trim()
+    if (!trimmed) {
+      setNotesError('Note cannot be empty.')
+      return
+    }
+    setSavingNote(true)
+    setNotesError(null)
+    try {
+      const updated = await noteAPI.update(token, selectedId, note.id, trimmed)
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, ...updated, note: updated.note ?? trimmed } : n)))
+      setEditingNoteId(null)
+      setEditingNoteText('')
+      setAdminMessage('Note updated.')
+    } catch (err) {
+      setNotesError(err?.message || 'Failed to update note.')
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  const confirmDeleteNote = async () => {
+    if (!noteDeleteTarget || !selectedId) return
+    setDeletingNote(true)
+    setNotesError(null)
+    try {
+      await noteAPI.delete(token, selectedId, noteDeleteTarget.id)
+      setNotes((prev) => prev.filter((n) => n.id !== noteDeleteTarget.id))
+      setNoteDeleteTarget(null)
+      setAdminMessage('Note deleted.')
+    } catch (err) {
+      setNotesError(err?.message || 'Failed to delete note.')
+    } finally {
+      setDeletingNote(false)
     }
   }
 
@@ -1150,15 +1209,79 @@ function AdminPage() {
                   {notesError ? <div className="admin-alert error">{notesError}</div> : null}
                   {notes.length ? (
                     <ul className="admin-note-list">
-                      {notes.map((note) => (
-                        <li key={note.id}>
-                          <p>{note.note}</p>
-                          <div className="admin-note-meta">
-                            <span>✍️ {note.user?.name || 'Recruiter'}</span>
-                            <span title={new Date(note.created_at).toLocaleString()}>{timeAgo(note.created_at)}</span>
-                          </div>
-                        </li>
-                      ))}
+                      {notes.map((note) => {
+                        const isEditing = editingNoteId === note.id
+                        return (
+                          <li key={note.id}>
+                            {isEditing ? (
+                              <div className="admin-note-edit">
+                                <textarea
+                                  className="admin-note-textarea"
+                                  value={editingNoteText}
+                                  onChange={(event) => setEditingNoteText(event.target.value)}
+                                  rows={3}
+                                  maxLength={4000}
+                                  autoFocus
+                                />
+                                <div className="admin-note-edit-actions">
+                                  <button
+                                    type="button"
+                                    className="admin-note-edit-cancel"
+                                    onClick={cancelEditNote}
+                                    disabled={savingNote}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="admin-note-edit-save"
+                                    onClick={() => saveEditedNote(note)}
+                                    disabled={savingNote || !editingNoteText.trim()}
+                                  >
+                                    {savingNote ? (
+                                      <><span className="admin-note-spinner" />Saving…</>
+                                    ) : (
+                                      'Save changes'
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p>{note.note}</p>
+                            )}
+                            <div className="admin-note-meta">
+                              <span>✍️ {note.user?.name || 'Recruiter'}</span>
+                              <span title={new Date(note.created_at).toLocaleString()}>{timeAgo(note.created_at)}</span>
+                              {!isEditing && viewMode === 'active' && (canEdit || canDelete) && (
+                                <div className="admin-note-actions">
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      className="admin-note-action-btn"
+                                      onClick={() => startEditNote(note)}
+                                      title="Edit note"
+                                      aria-label="Edit note"
+                                    >
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                  )}
+                                  {canDelete && (
+                                    <button
+                                      type="button"
+                                      className="admin-note-action-btn admin-note-action-danger"
+                                      onClick={() => setNoteDeleteTarget(note)}
+                                      title="Delete note"
+                                      aria-label="Delete note"
+                                    >
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        )
+                      })}
                     </ul>
                   ) : !notesLoading ? (
                     <div className="admin-empty-state" style={{ padding: '1.5rem 0' }}>
@@ -1301,6 +1424,47 @@ function AdminPage() {
                   <><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Deleting…</>
                 ) : (
                   <>Delete permanently</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ), document.body)}
+      {noteDeleteTarget && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !deletingNote && setNoteDeleteTarget(null)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete note confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="del-modal-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </div>
+            <h3 className="del-modal-title">Delete note?</h3>
+            <p className="del-modal-body">
+              This note from <strong>{noteDeleteTarget.user?.name || 'Recruiter'}</strong> will be permanently removed. This action cannot be undone.
+            </p>
+            <div className="del-modal-actions">
+              <button
+                type="button"
+                className="del-modal-cancel"
+                onClick={() => setNoteDeleteTarget(null)}
+                disabled={deletingNote}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="del-modal-confirm"
+                onClick={confirmDeleteNote}
+                disabled={deletingNote}
+              >
+                {deletingNote ? (
+                  <><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Deleting…</>
+                ) : (
+                  <>Delete note</>
                 )}
               </button>
             </div>
