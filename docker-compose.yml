@@ -31,8 +31,15 @@ services:
       - SANCTUM_STATEFUL_DOMAINS=localhost,127.0.0.1
       - SEED_ADMIN_EMAIL=admin@example.com
       - SEED_ADMIN_PASSWORD=password
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_ENCRYPTION=tls
+      - MAIL_USERNAME=jchua@czarkmak.com
+      - MAIL_PASSWORD=rxwvihooeblbawee
+      - MAIL_FROM_ADDRESS=jchua@czarkmak.com
+      - MAIL_FROM_NAME="CZARK MAK CORPORATION"
     volumes:
-      - ./ATS-BACKEND:/var/www
       - ./ATS-BACKEND/storage/logs:/var/www/storage/logs
     networks:
       - ats-network
@@ -112,8 +119,16 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - QUEUE_CONNECTION=redis
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_ENCRYPTION=tls
+      - MAIL_USERNAME=jchua@czarkmak.com
+      - MAIL_PASSWORD=rxwvihooeblbawee
+      - MAIL_FROM_ADDRESS=jchua@czarkmak.com
+      - MAIL_FROM_NAME="CZARK MAK CORPORATION"
     volumes:
-      - ./ATS-BACKEND:/var/www
+      - ./ATS-BACKEND/storage/logs:/var/www/storage/logs
     depends_on:
       - mysql
       - redis
